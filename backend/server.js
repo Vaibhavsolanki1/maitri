@@ -59,6 +59,24 @@ function sanitizeVoiceText(text) {
   return String(text).replace(/[^a-zA-Z0-9 .,'-]/g, "");
 }
 
+function getToneGuidance(emotion) {
+  const normalized = String(emotion || "").toLowerCase();
+
+  if (normalized.includes("sad") || normalized.includes("tired")) {
+    return "Use a calm, gentle tone. Offer reassurance and a small grounding step.";
+  }
+
+  if (normalized.includes("angry") || normalized.includes("frustrated")) {
+    return "Use a grounding tone. Validate feelings, slow the pace, and avoid escalation.";
+  }
+
+  if (normalized.includes("happy") || normalized.includes("excited") || normalized.includes("joy")) {
+    return "Use an energetic, encouraging tone while staying concise.";
+  }
+
+  return "Use a warm, steady tone that feels human and supportive.";
+}
+
 function buildSystemPrompt({
   userName,
   emotion,
@@ -75,10 +93,13 @@ function buildSystemPrompt({
   const vitalsText = vitals && typeof vitals === "object"
     ? `Vitals: HR ${vitals.hr ?? "n/a"}, SpO2 ${vitals.spo2 ?? "n/a"}, Temp ${vitals.temp ?? "n/a"}.`
     : "Vitals: n/a.";
+  const toneGuidance = getToneGuidance(emotion);
 
   return [
     "You are MAITRI, a warm and supportive AI companion for people in isolated or stressful environments.",
     "Keep responses concise, empathetic, and actionable.",
+    "Write like a human, not a robot. Use 2-4 short sentences unless the user asks for more detail.",
+    toneGuidance,
     `User name: ${userName}.`,
     `Detected emotion: ${emotion} ${confidenceText}.`,
     `Communication style: ${communicationStyle}. Humor preference: ${humorPreference}. Overall mood: ${overallMood}.`,
@@ -107,7 +128,8 @@ async function callOpenRouter(messages) {
 
   const text = response.data?.choices?.[0]?.message?.content;
   if (!isNonEmptyString(text)) {
-    throw new Error("Empty response from OpenRouter.");
+    console.warn("OpenRouter returned empty content:", response.data);
+    return "I'm here with you. Can you tell me more about what's going on?";
   }
   return text.trim();
 }
@@ -285,11 +307,18 @@ app.get(
     const history = await db
       .collection("conversations")
       .find({ userName })
-      .sort({ timestamp: -1 })
+      .sort({ timestamp: -1, _id: -1 })
       .limit(limit)
       .toArray();
 
-    history.reverse();
+    history.sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      if (timeA !== timeB) {
+        return timeA - timeB;
+      }
+      return String(a._id).localeCompare(String(b._id));
+    });
     res.json({ userName, items: history });
   })
 );

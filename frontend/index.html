@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
+    <div id="neural-bg" class="neural-container"></div>
     <div class="app">
       <header class="app-header">
         <div class="brand">
@@ -15,7 +16,7 @@
         </div>
         <div class="status-row">
           <div class="status-chip" id="system-status">System ready</div>
-          <button class="ghost-button" id="toggle-mic" type="button">Mic idle</button>
+          <button class="ghost-button" id="toggle-theme" type="button">Light mode</button>
         </div>
       </header>
 
@@ -26,6 +27,13 @@
               <h2>Presence</h2>
               <span class="panel-tag">Camera</span>
             </div>
+            <div class="identity-top">
+              <div class="identity-chip">
+                <span class="meta-title">Active user</span>
+                <span class="meta-value" id="active-user">Aksh</span>
+              </div>
+              <button class="ghost-button add-profile-toggle" type="button" id="add-profile-toggle">+</button>
+            </div>
             <div class="camera-shell">
               <div class="camera-placeholder" id="camera-placeholder">
                 <video id="camera-feed" autoplay playsinline muted></video>
@@ -33,6 +41,18 @@
                   <div class="camera-ring"></div>
                   <p id="camera-status">Camera feed will appear here</p>
                 </div>
+              </div>
+              <div class="add-profile-panel" id="add-profile-panel" aria-hidden="true">
+                <div class="identity-actions">
+                  <input
+                    id="identity-name"
+                    type="text"
+                    placeholder="Add profile name"
+                    autocomplete="off"
+                  />
+                  <button class="ghost-button" type="button" id="enroll-face">Add profile</button>
+                </div>
+                <p class="panel-note">We will take a quick snapshot to enroll this face.</p>
               </div>
               <button class="primary-button" type="button" id="enable-camera">Enable camera</button>
               <p class="panel-note">Privacy: facial analysis runs on device. Only labels are shared.</p>
@@ -108,6 +128,7 @@
                 placeholder="Share what is on your mind"
                 autocomplete="off"
               />
+              <button class="ghost-button mic-button" type="button" id="chat-mic">🎤</button>
               <button class="primary-button" type="submit">Send</button>
             </form>
             <div class="chat-hints">
@@ -141,6 +162,18 @@
         <span>Latency target: under 3 seconds end to end.</span>
       </footer>
     </div>
+    <script src="js/flow-field-background.js"></script>
+    <script>
+      const container = document.getElementById("neural-bg");
+      if (container) {
+        new NeuralBackground(container, {
+          color: "#e47f63",
+          trailOpacity: 0.08,
+          particleCount: 520,
+          speed: 0.7
+        });
+      }
+    </script>
     <script defer src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script defer src="js/app.js"></script>
   </body>

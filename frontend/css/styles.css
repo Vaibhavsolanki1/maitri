@@ -13,6 +13,45 @@
   --shadow: 0 24px 60px rgba(42, 29, 24, 0.18);
   --radius: 22px;
   --radius-sm: 14px;
+  --bg-spot: #fff7ef;
+  --chip-bg: rgba(108, 140, 123, 0.16);
+  --chip-text: #35614a;
+  --tag-bg: rgba(228, 127, 99, 0.12);
+  --tag-text: #9a4a34;
+  --input-bg: #fff;
+  --input-border: rgba(42, 29, 24, 0.18);
+  --panel-soft: rgba(255, 255, 255, 0.6);
+  --panel-soft-border: rgba(42, 29, 24, 0.08);
+  --ghost-bg: rgba(255, 255, 255, 0.6);
+  --ghost-border: rgba(42, 29, 24, 0.2);
+  --ghost-text: var(--text);
+  --action-bg: #fff;
+}
+
+body[data-theme="dark"] {
+  --bg-spot: #1b1714;
+  --bg: #10100f;
+  --bg-2: #151210;
+  --panel: #1b1714;
+  --panel-border: rgba(245, 230, 218, 0.12);
+  --text: #f6ece4;
+  --muted: #c7b1a3;
+  --accent: #d47b5e;
+  --accent-2: #7ba28d;
+  --accent-3: #e0b07b;
+  --shadow: 0 24px 60px rgba(7, 6, 5, 0.6);
+  --chip-bg: rgba(108, 140, 123, 0.28);
+  --chip-text: #d7f1e1;
+  --tag-bg: rgba(228, 127, 99, 0.25);
+  --tag-text: #f0b7a1;
+  --input-bg: rgba(24, 19, 16, 0.9);
+  --input-border: rgba(245, 230, 218, 0.2);
+  --panel-soft: rgba(26, 20, 18, 0.75);
+  --panel-soft-border: rgba(245, 230, 218, 0.12);
+  --ghost-bg: rgba(26, 20, 18, 0.7);
+  --ghost-border: rgba(245, 230, 218, 0.2);
+  --ghost-text: #f6ece4;
+  --action-bg: rgba(26, 20, 18, 0.9);
 }
 
 * {
@@ -23,8 +62,40 @@ body {
   margin: 0;
   font-family: "Manrope", "Segoe UI", sans-serif;
   color: var(--text);
-  background: radial-gradient(circle at top, #fff7ef 0%, var(--bg) 45%, var(--bg-2) 100%);
+  background: radial-gradient(circle at top, var(--bg-spot) 0%, var(--bg) 45%, var(--bg-2) 100%);
   min-height: 100vh;
+  transition: background 0.35s ease, color 0.35s ease;
+}
+
+.neural-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.neural-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.panel,
+.status-chip,
+.panel-tag,
+.chat-window,
+.message,
+.action-pill,
+.primary-button,
+.ghost-button,
+.chat-input input,
+.identity-actions input,
+.vital,
+.emotion-card,
+.meta-item {
+  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease,
+    box-shadow 0.35s ease;
 }
 
 .app {
@@ -33,6 +104,7 @@ body {
   padding: 32px 24px 40px;
   position: relative;
   isolation: isolate;
+  z-index: 1;
 }
 
 .app::before,
@@ -94,14 +166,15 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .status-chip {
   padding: 8px 14px;
-  background: rgba(108, 140, 123, 0.16);
+  background: var(--chip-bg);
   border-radius: 999px;
   font-size: 13px;
-  color: #35614a;
+  color: var(--chip-text);
   font-weight: 600;
 }
 
@@ -151,14 +224,68 @@ body {
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(228, 127, 99, 0.12);
-  color: #9a4a34;
+  background: var(--tag-bg);
+  color: var(--tag-text);
   font-weight: 600;
 }
 
 .camera-shell {
   display: grid;
   gap: 14px;
+}
+
+.identity-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.identity-chip {
+  display: grid;
+  gap: 6px;
+}
+
+.add-profile-toggle {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.add-profile-panel {
+  display: none;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+  border: 1px solid var(--panel-soft-border);
+}
+
+.add-profile-panel.is-open {
+  display: block;
+}
+
+.identity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.identity-actions input {
+  flex: 1;
+  min-width: 160px;
+  border: 1px solid var(--input-border);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 13px;
+  background: var(--input-bg);
+  color: var(--text);
 }
 
 .camera-placeholder {
@@ -298,8 +425,8 @@ body {
   width: 100%;
   height: 120px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(42, 29, 24, 0.08);
+  background: var(--panel-soft);
+  border: 1px solid var(--panel-soft-border);
 }
 
 .vitals-footer {
@@ -314,13 +441,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--panel-soft);
   border-radius: var(--radius-sm);
   padding: 16px;
   min-height: 320px;
   max-height: 360px;
   overflow-y: auto;
-  border: 1px solid rgba(42, 29, 24, 0.08);
+  border: 1px solid var(--panel-soft-border);
 }
 
 .message {
@@ -364,15 +491,43 @@ body {
   display: flex;
   gap: 12px;
   margin-top: 14px;
+  align-items: center;
 }
 
 .chat-input input {
   flex: 1;
-  border: 1px solid rgba(42, 29, 24, 0.18);
+  border: 1px solid var(--input-border);
   border-radius: 999px;
   padding: 12px 16px;
   font-size: 14px;
-  background: #fff;
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+.mic-button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.speaker-button {
+  border: 1px solid var(--ghost-border);
+  background: var(--ghost-bg);
+  color: var(--ghost-text);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
 }
 
 .chat-input input:disabled {
@@ -401,7 +556,7 @@ body {
   padding: 10px 16px;
   font-size: 13px;
   font-weight: 600;
-  background: #fff;
+  background: var(--action-bg);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -447,9 +602,14 @@ body {
 }
 
 .ghost-button {
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--text);
-  border: 1px solid rgba(42, 29, 24, 0.2);
+  background: var(--ghost-bg);
+  color: var(--ghost-text);
+  border: 1px solid var(--ghost-border);
+}
+
+.ghost-button.is-active {
+  box-shadow: 0 12px 24px rgba(42, 29, 24, 0.2);
+  transform: translateY(-1px);
 }
 
 .app-footer {

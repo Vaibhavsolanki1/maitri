@@ -8,6 +8,11 @@ const chatSubmit = chatForm.querySelector("button[type=\"submit\"]");
 
 const CHAT_ENDPOINT = "http://localhost:3000/chat";
 
+const cameraPlaceholder = document.getElementById("camera-placeholder");
+const cameraFeed = document.getElementById("camera-feed");
+const cameraStatus = document.getElementById("camera-status");
+const emotionMode = document.getElementById("emotion-mode");
+
 const emotionLabel = document.getElementById("emotion-label");
 const emotionConfidence = document.getElementById("emotion-confidence");
 const emotionTrend = document.getElementById("emotion-trend");
@@ -38,6 +43,10 @@ const vitalsState = {
 
 let micActive = false;
 let emotionIndex = 0;
+let cameraStream = null;
+let detectionTimer = null;
+let emotionTimer = null;
+let modelsReady = false;
 
 function formatTimeStamp(date) {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -143,6 +152,93 @@ function cycleEmotion() {
   emotionUpdated.textContent = `Updated at ${formatTimeStamp(new Date())}`;
 }
 
+async function loadModels() {
+  if (modelsReady) {
+    return;
+  }
+
+  if (!window.faceapi) {
+    throw new Error("face-api.js failed to load");
+  }
+
+  const modelPath = "./models";
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
+    faceapi.nets.faceExpressionNet.loadFromUri(modelPath),
+    faceapi.nets.faceLandmark68Net.loadFromUri(modelPath)
+  ]);
+  modelsReady = true;
+}
+
+function formatEmotionLabel(label) {
+  if (!label) {
+    return "Unknown";
+  }
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function startEmotionDetection() {
+  if (!cameraFeed) {
+    return;
+  }
+
+  if (detectionTimer) {
+    window.clearInterval(detectionTimer);
+  }
+
+  detectionTimer = window.setInterval(async () => {
+    if (!cameraStream || cameraFeed.readyState < 2) {
+      return;
+    }
+
+    try {
+      const detection = await faceapi
+        .detectSingleFace(cameraFeed, new faceapi.TinyFaceDetectorOptions({
+          inputSize: 224,
+          scoreThreshold: 0.5
+        }))
+        .withFaceExpressions();
+
+      if (!detection || !detection.expressions) {
+        emotionLabel.textContent = "No face";
+        emotionConfidence.textContent = "Confidence --";
+        emotionTrend.textContent = "Waiting";
+        emotionUpdated.textContent = `Updated at ${formatTimeStamp(new Date())}`;
+        return;
+      }
+
+      const entries = Object.entries(detection.expressions);
+      entries.sort((a, b) => b[1] - a[1]);
+      const [topLabel, topScore] = entries[0];
+
+      emotionLabel.textContent = formatEmotionLabel(topLabel);
+      emotionConfidence.textContent = `Confidence ${Math.round(topScore * 100)}%`;
+      emotionTrend.textContent = "Live";
+      emotionUpdated.textContent = `Updated at ${formatTimeStamp(new Date())}`;
+    } catch (error) {
+      console.warn("Emotion detection error:", error);
+    }
+  }, 900);
+}
+
+async function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error("Camera API not supported");
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      width: { ideal: 640 },
+      height: { ideal: 360 }
+    },
+    audio: false
+  });
+
+  cameraFeed.srcObject = stream;
+  cameraStream = stream;
+  await cameraFeed.play();
+}
+
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const value = chatInput.value.trim();
@@ -188,6 +284,7 @@ chatForm.addEventListener("submit", async (event) => {
     console.error(error);
   } finally {
     setLoadingState(false);
+    chatInput.focus();
   }
 });
 
@@ -198,10 +295,38 @@ toggleMic.addEventListener("click", () => {
 });
 
 enableCamera.addEventListener("click", () => {
+  if (cameraStream) {
+    return;
+  }
+
+  enableCamera.disabled = true;
+  enableCamera.textContent = "Starting...";
+  cameraStatus.textContent = "Requesting camera access";
   systemStatus.textContent = "Camera setup pending";
-  window.setTimeout(() => {
-    systemStatus.textContent = "Camera ready";
-  }, 700);
+
+  Promise.resolve()
+    .then(loadModels)
+    .then(startCamera)
+    .then(() => {
+      cameraPlaceholder.classList.add("camera-live");
+      cameraStatus.textContent = "Camera live";
+      systemStatus.textContent = "Camera ready";
+      enableCamera.textContent = "Camera enabled";
+      emotionMode.textContent = "Live";
+      if (emotionTimer) {
+        window.clearInterval(emotionTimer);
+        emotionTimer = null;
+      }
+      startEmotionDetection();
+    })
+    .catch((error) => {
+      console.error(error);
+      cameraStatus.textContent = "Camera unavailable";
+      systemStatus.textContent = "Camera error";
+      enableCamera.disabled = false;
+      enableCamera.textContent = "Enable camera";
+      emotionMode.textContent = "Simulated";
+    });
 });
 
 window.addEventListener("resize", () => {
@@ -212,4 +337,4 @@ window.addEventListener("resize", () => {
 resizeCanvas();
 updateVitals();
 window.setInterval(updateVitals, 2500);
-window.setInterval(cycleEmotion, 6500);
+emotionTimer = window.setInterval(cycleEmotion, 6500);

@@ -27,9 +27,12 @@
               <span class="panel-tag">Camera</span>
             </div>
             <div class="camera-shell">
-              <div class="camera-placeholder">
-                <div class="camera-ring"></div>
-                <p>Camera feed will appear here</p>
+              <div class="camera-placeholder" id="camera-placeholder">
+                <video id="camera-feed" autoplay playsinline muted></video>
+                <div class="camera-overlay">
+                  <div class="camera-ring"></div>
+                  <p id="camera-status">Camera feed will appear here</p>
+                </div>
               </div>
               <button class="primary-button" type="button" id="enable-camera">Enable camera</button>
               <p class="panel-note">Privacy: facial analysis runs on device. Only labels are shared.</p>
@@ -138,6 +141,7 @@
         <span>Latency target: under 3 seconds end to end.</span>
       </footer>
     </div>
-    <script src="js/app.js"></script>
+    <script defer src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script defer src="js/app.js"></script>
   </body>
 </html>

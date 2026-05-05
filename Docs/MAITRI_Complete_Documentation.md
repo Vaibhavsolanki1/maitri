@@ -117,7 +117,7 @@ Astronauts on long-duration missions face extreme isolation. MAITRI acts as an a
 | HTML5 | Page structure (3 pages: `index.html`, `details.html`, `yoga.html`) |
 | Vanilla JavaScript | All client logic (~820 lines in `script.js`) |
 | CSS3 (Custom) | Dark theme design system with CSS custom properties |
-| Tailwind CSS (CDN) | Used only on `details.html` for the project report page |
+| Inline CSS (details page) | Lightweight dashboard styling in `details.html` |
 | `face-api.js` v0.22.2 | In-browser face detection, landmark, recognition, expression analysis |
 | TensorFlow.js | Backend for MoveNet (pose detection) and HandPose (gesture control) |
 | Web Speech API | Speech recognition (STT) and speech synthesis (TTS) |
@@ -139,7 +139,7 @@ Astronauts on long-duration missions face extreme isolation. MAITRI acts as an a
 ### External Services
 | Service | Purpose |
 |---|---|
-| OpenRouter API | Gateway to NVIDIA Nemotron Nano 9B v2 (free tier) |
+| OpenRouter API | Gateway to NVIDIA Nemotron 4 340B instruct (default) |
 | MongoDB Atlas | Cloud-hosted NoSQL database |
 | Twilio | Programmable SMS + Voice for emergency alerts |
 
@@ -148,37 +148,39 @@ Astronauts on long-duration missions face extreme isolation. MAITRI acts as an a
 ## 4. Project File Structure
 
 ```
-Project Isro/
-├── Backend/
+MAITRI/
+├── backend/
 │   ├── .env                    # API keys & secrets (gitignored)
 │   ├── package.json            # Backend dependencies
-│   ├── server.js               # Express server (292 lines, all backend logic)
-│   └── node_modules/
+│   └── server.js               # Express server (API + static frontend)
 │
-├── Frontend/
-│   ├── index.html              # Main dashboard (192 lines)
-│   ├── script.js               # Core frontend logic (820 lines)
-│   ├── style.css               # Design system & all styles (520 lines)
-│   ├── details.html            # Interactive project report page (579 lines)
-│   ├── yoga.html               # Dedicated AI yoga trainer page (415 lines)
-│   ├── models/                 # face-api.js pre-trained model weights
-│   │   ├── tiny_face_detector_model-*
-│   │   ├── face_landmark_68_model-*
-│   │   ├── face_recognition_model-*
-│   │   └── face_expression_model-*
-│   ├── astro1.jpg              # Reference face for recognition (labeled "Vaibhav")
-│   ├── astro2-6.*              # Crew member avatar images
-│   ├── astronaut.png           # UI asset
-│   ├── astronaut-reply.mp4     # Video played during MAITRI speech
-│   ├── isro.png                # ISRO logo
-│   ├── maitri-logo.png         # MAITRI logo
-│   ├── relaxing-music.mp3      # Audio for relaxation module (~178 MB)
-│   ├── b.mp4, v.mp4            # Background/demo videos
-│   └── WhatsApp Image *.jpeg   # Additional reference images
+├── frontend/
+│   ├── index.html              # Main dashboard
+│   ├── details.html            # Project dashboard
+│   ├── yoga.html               # Yoga flow
+│   ├── manifest.json           # PWA manifest
+│   ├── css/
+│   │   └── styles.css           # Design system
+│   ├── js/
+│   │   ├── app.js               # Core frontend logic
+│   │   ├── details.js           # Dashboard charts + reports
+│   │   ├── flow-field-background.js
+│   │   └── yoga.js              # Pose detection flow
+│   ├── assets/
+│   │   └── ambient.mp3          # Placeholder ambient loop
+│   └── models/                 # face-api.js pre-trained model weights
+│       ├── tiny_face_detector_model-*
+│       ├── face_landmark_68_model-*
+│       ├── face_recognition_model-*
+│       └── face_expression_model-*
 │
-├── .gitignore
-├── package.json                # Root-level deps (cors, express, twilio)
-└── readme.md                   # Original project README
+├── Docs/
+│   ├── architecture.md
+│   ├── DEMO_SCRIPT.md
+│   ├── MAITRI_Complete_Documentation.md
+│   └── prd.md
+├── Dockerfile
+└── readme.md
 ```
 
 ---
@@ -187,39 +189,37 @@ Project Isro/
 
 ### 5.1 Main Dashboard (`index.html`)
 
-The main page is a **two-panel mission control dashboard**:
+The main page is a two-column companion dashboard:
 
-**Left Panel:**
-- **Video Box**: Side-by-side webcam feed + astronaut reply video
-- **Emotion Status Box**: Live display of detected emotion, confidence %, physical state
-- **Vitals & Environment Box**: Simulated HR, body temp, AQI with a real-time canvas graph
+**Left Column:**
+- **Presence panel**: Live camera feed, face enrollment, and status prompts
+- **Emotion pulse**: Live or simulated emotion label + confidence + trend
+- **Vitals snapshot**: Simulated HR, SpO2, temperature, with a rolling chart
 
-**Right Panel:**
-- **Chat Box**: Scrollable message thread (MAITRI vs astronaut bubbles)
-- **Input Area**: Text input + mic button + send button
-- **Quick Actions Bar**: Breathing, Relax, Sleep, Report, Yoga, Emergency, Project Details, Yoga Trainer
+**Right Column:**
+- **Companion chat**: Scrollable message thread with speak-back controls
+- **Input area**: Text input, mic button, send button, wake word support
+- **Quick actions**: Breathing, calming audio, yoga flow, daily report, emergency, vitals (placeholder)
 
-**Footer:**
-- Crew member avatar bar (circular images with green accent border)
+**Overlays:**
+- Breathing, calming audio library, daily report, emergency protocol
 
-### 5.2 Core JavaScript Logic (`script.js`)
+### 5.2 Core JavaScript Logic (`frontend/js/app.js`)
 
 The script is organized into these major sections:
 
 #### State Variables
 ```javascript
-let currentDetectedEmotion = 'neutral';  // Updated every 500ms by face-api
-let identifiedUserName = 'Crew Member';  // Updated by face recognition
+const currentEmotion = { label: "neutral", confidence: null };
+const identityState = { name: "Guest" };
 let faceMatcher = null;                  // face-api.js FaceMatcher instance
-let isMaitriActive = false;              // Wake word state machine
+let micActive = false;                   // Wake word state machine
 ```
 
 #### Health Vitals Simulation
-- Generates randomized but realistic values every 500ms
-- Heart rate: 68-78 BPM range
-- Body temperature: 36.4-36.8°C range
-- AQI: 42-48 (Good) range
-- Draws a real-time line graph on a `<canvas>` element tracking heart rate history (last 50 data points)
+- Generates randomized but realistic values every ~2.5s
+- Heart rate, SpO2, temperature in a constrained range
+- Draws a real-time line graph on a `<canvas>` element tracking recent HR history
 
 #### Face API Pipeline
 1. **Model Loading**: Loads 4 models from local `/models` directory:
@@ -227,19 +227,19 @@ let isMaitriActive = false;              // Wake word state machine
    - `faceLandmark68Net` — 68-point facial landmark detection
    - `faceRecognitionNet` — 128-dimension face descriptor
    - `faceExpressionNet` — 7-emotion expression classification
-2. **Face Matcher Creation**: Loads `astro1.jpg` as reference, creates a `LabeledFaceDescriptors` with label "Vaibhav", builds a `FaceMatcher` with 0.6 distance threshold.
-3. **Detection Loop** (runs every 500ms on video play):
+2. **Face Matcher Creation**: Uses locally enrolled face descriptors from `localStorage`.
+3. **Detection Loop** (runs on a timer while the camera is live):
    - Detects single face with `TinyFaceDetectorOptions` (score threshold 0.3)
    - Extracts expressions → finds highest confidence emotion
    - Updates DOM emotion status display
-   - Runs face recognition against matcher → identifies user or defaults to "Crew Member"
+   - Runs face recognition against matcher → identifies user or defaults to "Guest"
 
 #### Chat System
-- On form submit: sends user text to `/chat` endpoint with emotion + userName
+- On form submit: sends user text to `/chat` with emotion, vitals, and user name
 - Displays response as MAITRI message bubble
-- Speaks response via TTS with female voice preference (Zira/Samantha)
-- During speech: plays `astronaut-reply.mp4` video overlay
-- Detects action triggers in response (e.g., `start_relax_music`)
+- Speaks response via TTS with a preferred voice
+- Parses optional action tags (`[ACTION:breathing|music|yoga]`) to trigger overlays
+- Falls back to keyword matching when no action tag is present
 
 #### Voice System
 - **Speech Recognition**: Continuous, with interim results, English-US
@@ -260,38 +260,33 @@ let isMaitriActive = false;              // Wake word state machine
 - Opens animated modal with siren ring animation
 - Builds payload with current vitals from DOM, geolocation (with timeout), username
 - Sends POST to `/api/emergency`
-- Confirmation dialog prevents accidental triggers
-- Siren beep audio using Web Audio API oscillator (620Hz, chirp pattern at 350ms interval)
+- Two-step confirm button prevents accidental triggers
+- Siren beep audio via Web Audio API oscillator
 - Keyboard accessible (Escape to close)
 
 ### 5.3 Yoga Trainer Page (`yoga.html`)
 
-A dedicated page with three pose cards:
+A dedicated page with pose cards and a guided session overlay:
 
-| Pose | Detection Logic |
-|---|---|
-| Mountain Pose (Tadasana) | Both wrists above nose → "Excellent! Hold the pose" |
-| Tree Pose (Vrksasana) | Generic "Balance on one leg" instruction |
-| Warrior II (Virabhadrasana II) | Generic "Pose detection active" |
+- Select a pose to open a near full-screen camera stage.
+- A guidance column walks through short checkpoints and a 10-second final hold.
+- The camera feed is mirrored for intuitive alignment.
 
 **Technical Flow:**
-1. Page loads → immediately initializes MoveNet SINGLEPOSE_LIGHTNING model
-2. Buttons disabled until model loaded (with status indicator)
-3. On pose card click → opens full-screen overlay with camera feed on canvas
-4. Detection loop: `estimatePoses()` → `drawSkeleton()` → `evaluatePose()`
-5. Skeleton drawn as green (#4af8a1) dots at each keypoint (score > 0.3)
-6. Pose evaluation checks keypoint positions against rules
+1. Page loads → initializes MoveNet SINGLEPOSE_LIGHTNING model
+2. On pose card click → opens overlay + starts camera
+3. Detection loop: `estimatePoses()` → `evaluatePose()` → checkpoint timer
+4. Skeleton drawn as green/red dots based on pose confidence
+5. Session logs `pose`, `duration`, and `score` to the backend
 
 ### 5.4 Project Details Page (`details.html`)
 
-An interactive "Mission Briefing" dashboard built with Tailwind CSS + Chart.js:
+An interactive dashboard built with custom CSS + Chart.js:
 
-- **Sidebar Navigation**: Scroll-spy highlights current section
-- **Interactive Architecture Diagram**: Clickable flow nodes that reveal detailed descriptions
-- **Live Emotion Simulation Chart**: Bar chart auto-updating every 2.5s with random dominant emotion
-- **Latency Comparison Chart**: Horizontal bar showing MAITRI local (80ms) vs Cloud API (650ms)
-- **Market Distribution Chart**: Doughnut chart (Aerospace 10%, Elderly Care 40%, Telehealth 30%, Remote Work 20%)
-- **Tech Stack Grid**: 8 cards covering all technologies
+- **Sticky sidebar navigation** for quick section jumps
+- **Emotion history chart** sourced from `/history`
+- **Recent reports list** sourced from `/reports`
+- **Architecture overview** presented as a tech grid
 
 ---
 
@@ -300,12 +295,11 @@ An interactive "Mission Briefing" dashboard built with Tailwind CSS + Chart.js:
 ### 6.1 Server Architecture (`server.js` — 292 lines)
 
 Single-file Express server with:
-- CORS enabled for all origins
+- CORS origin configurable via `CORS_ORIGIN`
 - JSON body parsing
-- 5 MongoDB collections
-- 5 API endpoints
+- Rate limiting for chat and emergency routes
 - Adaptive learning module
-- Emergency alert system (Twilio)
+- Emergency alert system (Twilio, optional)
 
 ### 6.2 Database Connection
 
@@ -333,10 +327,10 @@ The `updateUserProfile()` function runs after each chat interaction:
 ### 6.4 Chat Endpoint Flow (`POST /chat`)
 
 ```
-Request Body: { message, emotion, userName }
+Request Body: { message, emotion, userName, vitals, emotionHistory }
                     │
                     ▼
-    1. Check for action keywords (relax/music → start_relax_music)
+   1. Check for action tags (`[ACTION:breathing|music|yoga]`) and keyword fallbacks
                     │
                     ▼
     2. Save user message to MongoDB (conversations collection)
@@ -348,23 +342,23 @@ Request Body: { message, emotion, userName }
     4. Fetch last 10 messages from conversations (for context)
                     │
                     ▼
-    5. Build system prompt:
-       "You are MAITRI, a helpful AI assistant for astronauts.
-        User: {userName}. Emotion: {emotion}.
-        Communication style: {profile.communicationStyle}.
-        Humor preference: {profile.humorPreference}.
-        Keep responses concise."
+   5. Build system prompt:
+      "You are MAITRI, a warm, supportive AI companion.
+      User: {userName}. Emotion: {emotion}.
+      Communication style: {profile.communicationStyle}.
+      Humor preference: {profile.humorPreference}.
+      Keep responses concise."
                     │
                     ▼
     6. POST to OpenRouter API:
-       Model: nvidia/nemotron-nano-9b-v2:free
+       Model: nvidia/nemotron-4-340b-instruct
        Messages: [system prompt, ...last 10 messages]
                     │
                     ▼
     7. Save AI response to MongoDB
                     │
                     ▼
-    8. Return: { reply: "...", action: "start_relax_music" | null }
+   8. Return: { reply, userName, emotion, emotionConfidence, action }
                     │
                     ▼
     9. Async: updateUserProfile(userName)
@@ -375,7 +369,7 @@ Request Body: { message, emotion, userName }
 **Payload:**
 ```json
 {
-  "vitals": { "hr": "72 BPM", "temp": "36.6 °C", "aqi": "45 (Good)" },
+   "vitals": { "hr": 72, "spo2": 97, "temp": 36.6 },
   "location": "12.3456,78.9123",
   "userName": "Vaibhav",
   "message": "Emergency triggered from MAITRI UI"
@@ -394,9 +388,9 @@ Request Body: { message, emotion, userName }
 User: Vaibhav
 Time: 2026-05-04T16:47:00.000Z
 --- Vitals ---
-HR: 72 BPM
-Temp: 36.6 °C
-AQI: 45 (Good)
+HR: 72
+SpO2: 97
+Temp: 36.6
 Location: 12.3456,78.9123
 Note: Emergency triggered from MAITRI UI
 ```
@@ -432,11 +426,10 @@ All models run on **WebGL backend** via TensorFlow.js. No data leaves the browse
 - **Output**: 21 hand keypoints per detected hand
 - **Used for**: Scroll control via hand gestures on main page
 
-### 7.4 NVIDIA Nemotron Nano 9B v2 (LLM)
+### 7.4 NVIDIA Nemotron 4 340B Instruct (LLM)
 
 - **Access**: Via OpenRouter API (`https://openrouter.ai/api/v1/chat/completions`)
-- **Model ID**: `nvidia/nemotron-nano-9b-v2:free`
-- **Tier**: Free
+- **Model ID**: `nvidia/nemotron-4-340b-instruct`
 - **Role**: Generates empathetic, context-aware conversational responses
 - **System prompt** includes: user name, detected emotion, learned communication style, humor preference
 
@@ -450,28 +443,30 @@ All models run on **WebGL backend** via TensorFlow.js. No data leaves the browse
 - Each phase: 4 seconds
 - Pacer scales 1.0x → 1.8x via CSS `transform: scale()` with `transition: 4s ease-in-out`
 
-### 8.2 Relaxation Music Player
-- Full-screen overlay with play/pause + volume slider
-- Audio source: `relaxing-music.mp3` (~178 MB, looped)
+### 8.2 Calming Audio Library
+- Modal overlay with library cards (ASMR, white noise, nature, rain, offshore beach)
+- Play/pause + volume control with now-playing status
+- Audio cards default to `assets/ambient.mp3` until custom files are added
 - Can be triggered by chat (user says "relax" or "music")
 
 ### 8.3 Daily Report Submission
-- Modal with textarea for astronaut to log daily observations
+- Modal with prompts, quick tags, and a character count
 - Saves to `daily_reports` collection with timestamp
-- Auto-closes 2 seconds after successful submission
+- Closes on successful submission
 
 ### 8.4 Emergency Alert System
 - Animated siren modal (pulse ring animation, shaking icon)
 - Web Audio API siren beep (oscillator 520-760 Hz chirp)
 - Device vibration on mobile
 - Geolocation collection (5s timeout, graceful fallback)
-- `confirm()` dialog before sending
+- Two-step confirm button before sending
 - Sends SMS + voice call via Twilio
 
 ### 8.5 AI Yoga Trainer
 - Separate page with pose selection cards
-- Full-screen camera overlay with skeleton rendering
-- Real-time pose evaluation with color-coded feedback
+- Near full-screen camera stage with skeleton rendering
+- Guidance column with checkpoints (1-2s holds) and a 10s final hold
+- Mirrored camera feed for intuitive alignment
 - Session data saved to `yoga_sessions` collection
 
 ---
@@ -480,12 +475,13 @@ All models run on **WebGL backend** via TensorFlow.js. No data leaves the browse
 
 | Method | Endpoint | Request Body | Response | Purpose |
 |---|---|---|---|---|
-| `GET` | `/history` | — | `[{role, content, timestamp}]` | Fetch all chat history |
-| `GET` | `/reports` | — | `[{report, timestamp}]` | Fetch all daily reports (newest first) |
-| `POST` | `/chat` | `{message, emotion, userName}` | `{reply, action}` | Send message, get AI response |
-| `POST` | `/report` | `{report}` | `{message}` | Submit daily report |
-| `POST` | `/yoga` | `{pose, duration}` | `{message}` | Save yoga session |
-| `POST` | `/api/emergency` | `{vitals, location, userName, message}` | `{success, message}` | Trigger emergency SMS + call |
+| `GET` | `/health` | — | `{ok}` | Health check |
+| `GET` | `/history` | — | `{userName, items}` | Fetch chat history |
+| `GET` | `/reports` | — | `{userName, items}` | Fetch daily reports |
+| `POST` | `/chat` | `{message, emotion, userName, vitals, emotionHistory}` | `{reply, userName, emotion, emotionConfidence, action}` | Send message, get AI response |
+| `POST` | `/report` | `{report, userName}` | `{ok, id}` | Submit daily report |
+| `POST` | `/yoga` | `{pose, duration, score, userName}` | `{ok, id}` | Save yoga session |
+| `POST` | `/api/emergency` | `{vitals, location, userName, message, emotion}` | `{ok, id}` | Trigger emergency SMS + call |
 
 **Base URL:** `http://localhost:3000`
 
@@ -497,12 +493,12 @@ All models run on **WebGL backend** via TensorFlow.js. No data leaves the browse
 
 ### conversations
 ```json
-{ "role": "user|assistant", "content": "message text", "timestamp": "ISODate" }
+{ "role": "user|assistant", "content": "message text", "userName": "Guest", "emotion": "neutral", "emotionConfidence": 0.72, "timestamp": "ISODate" }
 ```
 
 ### daily_reports
 ```json
-{ "report": "free text", "timestamp": "ISODate" }
+{ "report": "free text", "userName": "Guest", "timestamp": "ISODate" }
 ```
 
 ### user_profiles
@@ -517,14 +513,14 @@ All models run on **WebGL backend** via TensorFlow.js. No data leaves the browse
 
 ### yoga_sessions
 ```json
-{ "pose": "mountain|tree|warrior", "duration": 120, "timestamp": "ISODate" }
+{ "pose": "mountain|tree|warrior2", "duration": 120, "score": 100, "userName": "Guest", "timestamp": "ISODate" }
 ```
 
 ### emergencies
 ```json
 {
   "userName": "Vaibhav",
-  "vitals": { "hr": "72 BPM", "temp": "36.6 °C", "aqi": "45 (Good)" },
+   "vitals": { "hr": 72, "spo2": 97, "temp": 36.6 },
   "location": "lat,lng",
   "message": "text",
   "timestamp": "ISODate"
@@ -542,12 +538,16 @@ All models run on **WebGL backend** via TensorFlow.js. No data leaves the browse
 - MongoDB Atlas cluster
 - Twilio account (for emergency feature)
 
-### Environment Variables (`Backend/.env`)
+### Environment Variables (`backend/.env`)
 
 | Variable | Description |
 |---|---|
 | `OPENROUTER_API_KEY` | API key from openrouter.ai |
 | `MONGODB_URI` | MongoDB Atlas connection string |
+| `OPENROUTER_MODEL` | Optional model override |
+| `OPENROUTER_BASE_URL` | Optional OpenRouter base URL |
+| `CORS_ORIGIN` | Optional CORS origin override |
+| `TWILIO_ENABLED` | Toggle Twilio alerts (true/false) |
 | `TWILIO_SID` | Twilio Account SID |
 | `TWILIO_AUTH_TOKEN` | Twilio Auth Token |
 | `TWILIO_FROM` | Twilio phone number (e.g., +1xxxxxxxxxx) |
@@ -556,21 +556,19 @@ All models run on **WebGL backend** via TensorFlow.js. No data leaves the browse
 ### Installation Steps
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Vaibhavsolanki1/Isro-Bot.git
-cd Isro-Bot
+git clone https://github.com/Vaibhavsolanki1/maitri.git
+cd maitri
 
 # 2. Install backend dependencies
-cd Backend
+cd backend
 npm install
 
-# 3. Create .env file in Backend/ with all required variables
+# 3. Create .env file in backend/ with all required variables
 
 # 4. Start the backend server
-node server.js
+# npm run dev uses nodemon
+npm run dev
 # Server runs at http://localhost:3000
-
-# 5. Open Frontend/index.html with VS Code Live Server extension
-# (Required for camera/mic permissions over localhost)
 ```
 
 ---
@@ -579,36 +577,34 @@ node server.js
 
 ### Color Palette (CSS Custom Properties)
 ```css
---bg-dark-deep:  #0a0f1c   /* Deepest background */
---bg-dark-med:   #11182a   /* Card backgrounds */
---bg-dark-light: #1f2b45   /* Borders, secondary surfaces */
---accent-green:  #4af8a1   /* Primary accent, highlights, success */
---text-light:    #fff      /* Primary text */
---text-dark:     #000      /* Text on accent backgrounds */
+--bg: #f6efe8;
+--bg-2: #f0e2d5;
+--panel: #fff8f2;
+--text: #2a1d18;
+--accent: #e47f63;
 ```
 
 ### Typography
-- Primary font: `Inter` (sans-serif)
-- Details page: `Space Grotesk`
+- Primary font: `Manrope` (sans-serif)
+- Accent font: `Fraunces` (serif)
 
 ### UI Components
-- **Glass panels**: `rgba(30,41,59,0.7)` + `backdrop-filter: blur(10px)` + subtle white border
-- **Chat bubbles**: MAITRI = dark background (left-aligned), User = green accent (right-aligned)
-- **Buttons**: Green accent background, dark text, bold, 8px border-radius
-- **Mic button**: Red (#ff4757) when listening
-- **Cards**: Dark medium background, dark-light borders, hover lift effect
+- **Panels**: Soft gradient surfaces with rounded corners + shadow
+- **Chat bubbles**: System = muted green, User = warm accent
+- **Buttons**: Accent primary + ghost secondary
+- **Cards**: Lifted action cards with soft glow and hover lift
 
 ### Animations
-- **Siren pulse ring**: `pulseRing` — expanding box-shadow that fades
+- **Siren pulse**: `sirenBox` — expanding box-shadow that fades
 - **Icon shake**: `shake` — ±6° rotation oscillation
 - **Dot bounce**: `dotBounce` — Y-axis bounce with opacity change
 - **Pacer breathing**: CSS scale transform 1.0 → 1.8 with 4s ease-in-out
-- **Flow node hover**: translateY(-5px) + blue box-shadow
+- **Card hover lift**: subtle translateY and shadow increase
 
 ### Responsive Design
-- Main layout: flexbox two-column (left/right panels)
-- Emergency modal: stacks vertically below 720px
-- Details page: full responsive via Tailwind utilities
+- Main layout: CSS grid with responsive stack at 1100px
+- Yoga layout: camera + guide column; stacks on mobile
+- Details page: CSS grid with sticky sidebar
 
 ---
 
@@ -620,12 +616,12 @@ node server.js
 | Area | Current State | Recommendation |
 |---|---|---|
 | API Keys | Stored in `.env`, gitignored | Use a secrets manager in production |
-| CORS | Open to all origins (`app.use(cors())`) | Restrict to specific frontend origin |
+| CORS | Configurable via `CORS_ORIGIN` | Restrict to known frontend origin |
 | Emergency endpoint | No authentication | Add API key header or JWT auth |
 | MongoDB | Connection string in `.env` | Use IAM-based authentication |
 | Twilio credentials | Plain text in `.env` | Rotate regularly, use encrypted storage |
 | Input validation | Minimal | Add request body validation (Joi/Zod) |
-| Rate limiting | None | Add express-rate-limit |
+| Rate limiting | Chat (30/min) + emergency (3/min) | Expand to other endpoints as needed |
 | HTTPS | Not configured | Required for camera/mic in production |
 
 ---
@@ -633,22 +629,20 @@ node server.js
 ## 14. Known Limitations & Future Scope
 
 ### Current Limitations
-1. **Simulated vitals**: Heart rate, temperature, and AQI are randomly generated (not from real sensors)
-2. **Single-user face recognition**: Only one reference face ("Vaibhav") is configured
-3. **Yoga pose evaluation**: Only Mountain Pose has real keypoint-based detection logic; Tree and Warrior are placeholder
-4. **No user authentication**: No login system; single-user prototype
-5. **Local-only frontend**: Must be served via Live Server (no production build/deployment)
-6. **Large media files**: `relaxing-music.mp3` (178 MB) and videos in repo
+1. **Simulated vitals**: HR, SpO2, temperature are demo values (no hardware yet)
+2. **Local face enrollment**: Profiles are stored in browser storage, not server-side
+3. **Yoga evaluation is heuristic**: Pose checks are simplified and should be expanded
+4. **No user authentication**: No login system yet
+5. **Audio library placeholders**: All genre cards map to `assets/ambient.mp3`
 
 ### Future Enhancements
-1. **Real biometric integration**: Connect to wearable sensors (heart rate monitors, SpO2)
-2. **Multi-user support**: Registration, login, per-user face enrollment
-3. **Advanced yoga poses**: Full pose matching with angle calculation for all poses
-4. **Offline LLM**: Run a local language model for zero-connectivity environments (space)
-5. **Dashboard analytics**: Historical charts of mood trends, conversation summaries
-6. **WebRTC video calls**: Direct video communication with ground control
-7. **PWA support**: Service worker for offline-capable features
-8. **Deployment**: Docker containerization, HTTPS, proper CI/CD pipeline
+1. **Real biometric integration**: Connect to wearable sensors (HR, SpO2, temp)
+2. **Multi-user support**: Registration, login, server-side profile storage
+3. **Advanced yoga poses**: Angle-based evaluation and adaptive routines
+4. **Offline LLM**: Run a local language model for zero-connectivity environments
+5. **Dashboard analytics**: Mood trends, report summaries, and alerts
+6. **PWA support**: Service worker + offline caching
+7. **Deployment**: HTTPS, CI/CD, and environment hardening
 
 ---
 

@@ -50,6 +50,9 @@ MAITRI v2.0 uses a **modular, edge-hybrid architecture** — heavy AI runs clien
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+Current MVP endpoints: `/chat`, `/history`, `/reports`, `/report`, `/yoga`, `/api/emergency`, `/health`.
+Auth, vitals ingestion, and analytics endpoints are planned for the roadmap.
+
 ---
 
 ## 2. Layer Breakdown
@@ -104,9 +107,8 @@ Single Express server (upgradeable to microservices) handling:
 | Reports | `GET /reports`, `POST /report` | Daily report CRUD |
 | Yoga | `POST /yoga` | Session logging |
 | Emergency | `POST /api/emergency` | Twilio SMS + Voice + DB log |
-| Auth | `POST /auth/login`, `/auth/register` | JWT token management (v2) |
-| Vitals | `POST /vitals`, `GET /vitals/:userId` | Wearable data ingestion (v2) |
-| Profiles | `GET /profiles/:userId` | User profile + learned preferences |
+| Health | `GET /health` | Health check for uptime monitoring |
+| Profiles | — | Stored in `user_profiles` collection (no public endpoint yet) |
 
 ### 2.4 Prompt Builder System
 
@@ -308,19 +310,22 @@ emergencies:      { timestamp: -1 }, { userName: 1 }
 
 ```dockerfile
 # Dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY Backend/package*.json ./
-RUN npm ci --production
-COPY Backend/ .
+FROM node:18-alpine
+WORKDIR /usr/src/app
+COPY backend/package*.json ./backend/
+RUN cd backend && npm install --production
+COPY backend/ ./backend/
+COPY frontend/ ./frontend/
+WORKDIR /usr/src/app/backend
 EXPOSE 3000
-HEALTHCHECK --interval=30s CMD curl -f http://localhost:3000/health || exit 1
 CMD ["node", "server.js"]
 ```
 
 ---
 
-## 7. API Architecture (v2 Expanded)
+## 7. Roadmap: API Architecture (v2 Expanded)
+
+The endpoints below are planned for v2 and are not implemented in the current MVP.
 
 ### Authentication Flow
 
@@ -380,7 +385,7 @@ For environments without internet (space, submarines, disaster zones):
 | Layer | Current (v1) | Target (v2) |
 |---|---|---|
 | Frontend Framework | Vanilla JS + HTML | Vanilla JS → React (dashboard only) |
-| Styling | Custom CSS + Tailwind (details page) | Design system tokens + CSS modules |
+| Styling | Custom CSS + inline styles | Design system tokens + CSS modules |
 | Backend | Express.js (single file) | Express.js (modular routes) |
 | Database | MongoDB Atlas (5 collections) | MongoDB Atlas (8+ collections) + Redis |
 | LLM | OpenRouter (Nemotron free) | OpenRouter + Ollama (offline) |
@@ -418,7 +423,7 @@ server.js (292 lines, monolith)
 
 ### Step 2: Modularize Frontend
 ```
-script.js (820 lines, monolith)
+js/app.js (monolith)
     ↓ Refactor into:
 ├── js/
 │   ├── core/emotion-engine.js

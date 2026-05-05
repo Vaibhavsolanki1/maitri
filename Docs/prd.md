@@ -209,6 +209,7 @@ Each industry deployment activates specific modules on top of the core engine:
 | **Visualization** | Real-time line graph (HR), gauge indicators (Temp, SpO2), trend charts |
 | **Thresholds** | Configurable alert thresholds per vital per user |
 | **Storage** | Time-series storage with 30-day retention (configurable) |
+| **MVP Status** | Simulated vitals only; hardware integration pending |
 
 #### F6: Emergency Alert System
 
@@ -231,7 +232,7 @@ Each industry deployment activates specific modules on top of the core engine:
 
 #### F8: Relaxation Music Player
 
-- Curated audio library (ambient, nature sounds, binaural beats)
+- Curated audio library (ASMR, white noise, nature sounds, rain, offshore beach)
 - Play/pause + volume control
 - Can be triggered by AI ("I detect stress — would you like some calming music?")
 - Timer-based auto-stop (15min, 30min, 1hr)
@@ -243,6 +244,8 @@ Each industry deployment activates specific modules on top of the core engine:
 - Pose evaluation with keypoint-angle calculation
 - Pose library: Mountain, Tree, Warrior II, Cat-Cow, Child's Pose
 - Session logging with duration and pose accuracy scores
+- Guided checkpoints with short holds and a final extended hold
+- Mirrored camera feed for intuitive alignment
 - Voice-guided instructions
 
 #### F10: Hand Gesture Control

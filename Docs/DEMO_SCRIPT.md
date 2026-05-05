@@ -13,9 +13,10 @@
 
 ## 3. Wellness Interventions (2 min)
 - **Breathing Tool**: Complete one cycle of the breathing exercise overlay.
+- **Calming Audio**: Open "Calming audio" and switch between ASMR, rain, and nature presets.
 - **Yoga Flow**: Click "Yoga flow", navigating to the Yoga trainer.
 - **Action**: Perform the Mountain Pose and Tree Pose in front of the camera.
-- **Visual**: MoveNet accurately draws the skeleton, turns green when correct, and runs the hold timer.
+- **Visual**: MoveNet draws the skeleton, the mirrored feed improves alignment, and the guide column steps through checkpoints + a final hold.
 - **Action**: "End Session" to return to the main dashboard.
 
 ## 4. Advanced System Features (1.5 min)

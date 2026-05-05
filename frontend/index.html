@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MAITRI - Companion Mode</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-title">MAITRI</span>
+          <span class="brand-subtitle">Companion Mode</span>
+        </div>
+        <div class="status-row">
+          <div class="status-chip" id="system-status">System ready</div>
+          <button class="ghost-button" id="toggle-mic" type="button">Mic idle</button>
+        </div>
+      </header>
+
+      <main class="main-grid">
+        <div class="column left">
+          <section class="panel camera-panel">
+            <div class="panel-header">
+              <h2>Presence</h2>
+              <span class="panel-tag">Camera</span>
+            </div>
+            <div class="camera-shell">
+              <div class="camera-placeholder">
+                <div class="camera-ring"></div>
+                <p>Camera feed will appear here</p>
+              </div>
+              <button class="primary-button" type="button" id="enable-camera">Enable camera</button>
+              <p class="panel-note">Privacy: facial analysis runs on device. Only labels are shared.</p>
+            </div>
+          </section>
+
+          <section class="panel emotion-panel">
+            <div class="panel-header">
+              <h2>Emotion pulse</h2>
+              <span class="panel-tag" id="emotion-mode">Simulated</span>
+            </div>
+            <div class="emotion-grid">
+              <div class="emotion-card">
+                <div class="emotion-label" id="emotion-label">Neutral</div>
+                <div class="emotion-confidence" id="emotion-confidence">Confidence 72%</div>
+              </div>
+              <div class="emotion-meta">
+                <div class="meta-item">
+                  <span class="meta-title">Trend</span>
+                  <span class="meta-value" id="emotion-trend">Steady</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-title">Last update</span>
+                  <span class="meta-value" id="emotion-updated">Just now</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel vitals-panel">
+            <div class="panel-header">
+              <h2>Vitals snapshot</h2>
+              <span class="panel-tag">Simulated</span>
+            </div>
+            <div class="vitals-grid">
+              <div class="vital">
+                <span class="vital-label">Heart rate</span>
+                <span class="vital-value" id="vital-hr">78 bpm</span>
+              </div>
+              <div class="vital">
+                <span class="vital-label">SpO2</span>
+                <span class="vital-value" id="vital-spo2">97%</span>
+              </div>
+              <div class="vital">
+                <span class="vital-label">Temperature</span>
+                <span class="vital-value" id="vital-temp">36.9 C</span>
+              </div>
+            </div>
+            <canvas id="vitals-chart" width="520" height="120" aria-label="Heart rate history"></canvas>
+            <div class="vitals-footer">
+              <span id="vitals-updated">Updated just now</span>
+              <span class="vitals-note">Rolling 60 second window</span>
+            </div>
+          </section>
+        </div>
+
+        <div class="column right">
+          <section class="panel chat-panel">
+            <div class="panel-header">
+              <h2>Companion chat</h2>
+              <span class="panel-tag">Core</span>
+            </div>
+            <div class="chat-window" id="chat-messages">
+              <div class="message system">
+                <p>Welcome back. I am here with you. How are you feeling?</p>
+                <span class="message-meta">MAITRI</span>
+              </div>
+            </div>
+            <form class="chat-input" id="chat-form">
+              <input
+                id="chat-input"
+                type="text"
+                placeholder="Share what is on your mind"
+                autocomplete="off"
+              />
+              <button class="primary-button" type="submit">Send</button>
+            </form>
+            <div class="chat-hints">
+              <span>Try: "I feel overwhelmed today."</span>
+              <span>Or say: "Start breathing exercise."</span>
+            </div>
+          </section>
+
+          <section class="panel actions-panel">
+            <div class="panel-header">
+              <h2>Quick actions</h2>
+              <span class="panel-tag">Wellness</span>
+            </div>
+            <div class="action-grid">
+              <button class="action-pill" type="button">Breathing</button>
+              <button class="action-pill" type="button">Calming audio</button>
+              <button class="action-pill" type="button">Yoga flow</button>
+              <button class="action-pill" type="button">Daily report</button>
+              <button class="action-pill" type="button">Emergency</button>
+              <button class="action-pill" type="button">Vitals check</button>
+            </div>
+            <div class="action-footer">
+              <p>Actions are simulated in this UI shell. They will connect to live modules next.</p>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <span>MAITRI v2.0 MVP - Local processing, compassionate guidance.</span>
+        <span>Latency target: under 3 seconds end to end.</span>
+      </footer>
+    </div>
+    <script src="js/app.js"></script>
+  </body>
+</html>

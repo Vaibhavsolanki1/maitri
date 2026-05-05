@@ -38,12 +38,18 @@ const breathingContainer = document.getElementById("breathing-container");
 const breathingText = document.getElementById("breathing-text");
 
 const musicPlayer = document.getElementById("music-player");
+const musicSource = document.getElementById("music-source");
 const musicPlay = document.getElementById("music-play");
 const musicPause = document.getElementById("music-pause");
 const musicVolume = document.getElementById("music-volume");
+const musicLibrary = document.getElementById("music-library");
+const musicNowTitle = document.getElementById("music-now-title");
+const musicNotice = document.getElementById("music-notice");
 
 const reportText = document.getElementById("report-text");
 const reportSubmit = document.getElementById("report-submit");
+const reportCount = document.getElementById("report-count");
+const reportTags = document.querySelectorAll(".report-tag");
 
 const emergencyCancel = document.getElementById("emergency-cancel");
 const emergencyConfirm = document.getElementById("emergency-confirm");
@@ -105,6 +111,10 @@ let speechRecognition = null;
 let recognizedTranscript = "";
 let faceMatcher = null;
 let knownFaces = [];
+
+const MAX_REPORT_CHARS = 600;
+let activeMusicCard = null;
+let musicFallbackApplied = false;
 
 let breathingInterval = null;
 let sirenOscillator = null;
@@ -566,6 +576,9 @@ function applyTheme(theme) {
   toggleTheme.textContent = nextTheme === "dark" ? "Dark mode" : "Light mode";
   toggleTheme.classList.toggle("is-active", nextTheme === "dark");
   window.localStorage.setItem("maitriTheme", nextTheme);
+  if (window.updateNeuralBackground) {
+    window.updateNeuralBackground();
+  }
 }
 
 function toggleAddProfilePanel() {
@@ -953,6 +966,7 @@ if (btnYoga) btnYoga.addEventListener("click", () => window.location.href = "yog
 if (btnReport) {
   btnReport.addEventListener("click", () => {
     reportText.value = "";
+    updateReportCount();
     modalReport.classList.add("is-open");
   });
 }
@@ -965,15 +979,100 @@ if (btnEmergency) {
   });
 }
 if (btnVitals) {
-  btnVitals.addEventListener("click", () => {
-    const vitalsPanel = document.querySelector(".vitals-panel");
-    if (vitalsPanel) vitalsPanel.scrollIntoView({ behavior: "smooth" });
-  });
+  if (!btnVitals.disabled) {
+    btnVitals.addEventListener("click", () => {
+      const vitalsPanel = document.querySelector(".vitals-panel");
+      if (vitalsPanel) vitalsPanel.scrollIntoView({ behavior: "smooth" });
+    });
+  }
 }
 
 if (musicPlay) musicPlay.addEventListener("click", () => musicPlayer.play());
 if (musicPause) musicPause.addEventListener("click", () => musicPlayer.pause());
 if (musicVolume) musicVolume.addEventListener("input", (e) => musicPlayer.volume = e.target.value);
+
+function updateReportCount() {
+  if (!reportCount || !reportText) {
+    return;
+  }
+  const length = reportText.value.length;
+  reportCount.textContent = `${length} / ${MAX_REPORT_CHARS}`;
+}
+
+function appendReportTag(tag) {
+  if (!reportText || !tag) {
+    return;
+  }
+  const separator = reportText.value.trim().length ? " " : "";
+  reportText.value = `${reportText.value}${separator}${tag}`.trim();
+  reportText.focus();
+  updateReportCount();
+}
+
+function setActiveMusicCard(card, options = {}) {
+  if (!card || !musicPlayer) {
+    return;
+  }
+  const musicCards = musicLibrary ? Array.from(musicLibrary.querySelectorAll(".music-card")) : [];
+  musicCards.forEach((item) => item.classList.remove("is-active"));
+  card.classList.add("is-active");
+  activeMusicCard = card;
+
+  const src = card.dataset.src || "assets/ambient.mp3";
+  const title = card.dataset.title || card.querySelector(".music-card-title")?.textContent || "Calming audio";
+
+  if (musicNowTitle) {
+    musicNowTitle.textContent = title;
+  }
+
+  if (musicSource) {
+    musicSource.src = src;
+    musicPlayer.load();
+  } else {
+    musicPlayer.src = src;
+    musicPlayer.load();
+  }
+
+  if (options.autoplay) {
+    musicPlayer.play();
+  }
+}
+
+if (musicLibrary) {
+  const cards = Array.from(musicLibrary.querySelectorAll(".music-card"));
+  cards.forEach((card) => {
+    card.addEventListener("click", () => setActiveMusicCard(card, { autoplay: true }));
+  });
+  if (cards.length > 0) {
+    setActiveMusicCard(cards[0]);
+  }
+}
+
+if (musicPlayer) {
+  musicPlayer.addEventListener("error", () => {
+    if (musicFallbackApplied) {
+      return;
+    }
+    musicFallbackApplied = true;
+    if (musicNotice) {
+      musicNotice.textContent = "Selected track missing. Using ambient loop instead.";
+    }
+    if (musicSource) {
+      musicSource.src = "assets/ambient.mp3";
+      musicPlayer.load();
+    }
+  });
+}
+
+if (reportText) {
+  reportText.addEventListener("input", updateReportCount);
+}
+
+if (reportTags && reportTags.length) {
+  reportTags.forEach((tagButton) => {
+    tagButton.addEventListener("click", () => appendReportTag(tagButton.dataset.tag));
+  });
+}
 
 if (reportSubmit) {
   reportSubmit.addEventListener("click", async () => {

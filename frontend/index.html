@@ -154,15 +154,40 @@
               <span class="panel-tag">Wellness</span>
             </div>
             <div class="action-grid">
-              <button id="btn-breathing" class="action-pill" type="button">Breathing</button>
-              <button id="btn-audio" class="action-pill" type="button">Calming audio</button>
-              <button id="btn-yoga" class="action-pill" type="button">Yoga flow</button>
-              <button id="btn-report" class="action-pill" type="button">Daily report</button>
-              <button id="btn-emergency" class="action-pill" type="button">Emergency</button>
-              <button id="btn-vitals" class="action-pill" type="button">Vitals check</button>
+              <button id="btn-breathing" class="action-card" type="button">
+                <span class="action-icon">🫁</span>
+                <span class="action-title">Breathing</span>
+                <span class="action-subtitle">4-phase calming cycle</span>
+              </button>
+              <button id="btn-audio" class="action-card" type="button">
+                <span class="action-icon">🎧</span>
+                <span class="action-title">Calming audio</span>
+                <span class="action-subtitle">ASMR, nature, rain</span>
+              </button>
+              <button id="btn-yoga" class="action-card" type="button">
+                <span class="action-icon">🧘</span>
+                <span class="action-title">Yoga flow</span>
+                <span class="action-subtitle">Guided pose routines</span>
+              </button>
+              <button id="btn-report" class="action-card" type="button">
+                <span class="action-icon">📝</span>
+                <span class="action-title">Daily report</span>
+                <span class="action-subtitle">Reflect and track your day</span>
+              </button>
+              <button id="btn-emergency" class="action-card" type="button">
+                <span class="action-icon">🚨</span>
+                <span class="action-title">Emergency</span>
+                <span class="action-subtitle">Rapid response protocol</span>
+              </button>
+              <button id="btn-vitals" class="action-card is-disabled" type="button" disabled>
+                <span class="action-icon">🩺</span>
+                <span class="action-title">Vitals check</span>
+                <span class="action-subtitle">Hardware integration pending</span>
+                <span class="action-meta">Coming soon</span>
+              </button>
             </div>
             <div class="action-footer">
-              <p>All actions are live and connected to backend services.</p>
+              <p>Personalized tools, tuned to your current state.</p>
             </div>
           </section>
         </div>
@@ -183,23 +208,69 @@
         <div class="modal-card">
           <button class="modal-close" type="button" aria-label="Close">&times;</button>
           <h2>Calming Audio</h2>
+          <p class="panel-note">Pick a soundscape to settle your nervous system.</p>
           <audio id="music-player" loop>
-            <source src="assets/ambient.mp3" type="audio/mpeg">
+            <source id="music-source" src="assets/ambient.mp3" type="audio/mpeg">
           </audio>
+          <div class="music-library" id="music-library">
+            <button class="music-card is-active" type="button" data-title="ASMR Drift" data-meta="ASMR • Soft whispers" data-src="assets/ambient.mp3">
+              <span class="music-card-title">ASMR Drift</span>
+              <span class="music-card-meta">ASMR • Soft whispers</span>
+            </button>
+            <button class="music-card" type="button" data-title="White Noise" data-meta="Focus • Neutral wash" data-src="assets/ambient.mp3">
+              <span class="music-card-title">White Noise</span>
+              <span class="music-card-meta">Focus • Neutral wash</span>
+            </button>
+            <button class="music-card" type="button" data-title="Nature Walk" data-meta="Nature • Birds + breeze" data-src="assets/ambient.mp3">
+              <span class="music-card-title">Nature Walk</span>
+              <span class="music-card-meta">Nature • Birds + breeze</span>
+            </button>
+            <button class="music-card" type="button" data-title="Soft Rain" data-meta="Rain • Gentle storm" data-src="assets/ambient.mp3">
+              <span class="music-card-title">Soft Rain</span>
+              <span class="music-card-meta">Rain • Gentle storm</span>
+            </button>
+            <button class="music-card" type="button" data-title="Offshore Beach" data-meta="Ocean • Rolling tide" data-src="assets/ambient.mp3">
+              <span class="music-card-title">Offshore Beach</span>
+              <span class="music-card-meta">Ocean • Rolling tide</span>
+            </button>
+          </div>
+          <div class="music-now">
+            <div>
+              <span class="music-now-label">Now playing</span>
+              <span class="music-now-title" id="music-now-title">ASMR Drift</span>
+            </div>
+            <div class="music-controls is-compact">
+              <button id="music-play" class="primary-button">Play</button>
+              <button id="music-pause" class="ghost-button">Pause</button>
+            </div>
+          </div>
           <div class="music-controls">
-            <button id="music-play" class="primary-button">Play</button>
-            <button id="music-pause" class="ghost-button">Pause</button>
             <input type="range" id="music-volume" min="0" max="1" step="0.1" value="0.5" />
           </div>
+          <p class="music-notice" id="music-notice">Swap in your own audio files to personalize each genre.</p>
         </div>
       </div>
 
       <div id="modal-report" class="modal-overlay" aria-hidden="true">
-        <div class="modal-card">
+        <div class="modal-card report-card">
           <button class="modal-close" type="button" aria-label="Close">&times;</button>
-          <h2>Daily Report</h2>
-          <textarea id="report-text" placeholder="How was your day?" rows="4"></textarea>
-          <button id="report-submit" class="primary-button">Submit</button>
+          <div class="report-header">
+            <h2>Daily Report</h2>
+            <p class="report-subtitle">Capture highlights, stressors, and wins in a few lines.</p>
+          </div>
+          <div class="report-tags" role="group" aria-label="Quick prompts">
+            <button class="report-tag" type="button" data-tag="Grateful">Grateful</button>
+            <button class="report-tag" type="button" data-tag="Focused">Focused</button>
+            <button class="report-tag" type="button" data-tag="Stressed">Stressed</button>
+            <button class="report-tag" type="button" data-tag="Tired">Tired</button>
+            <button class="report-tag" type="button" data-tag="Proud">Proud</button>
+          </div>
+          <label class="report-label" for="report-text">Your reflection</label>
+          <textarea id="report-text" placeholder="How was your day?" rows="6" maxlength="600"></textarea>
+          <div class="report-footer">
+            <span class="report-count" id="report-count">0 / 600</span>
+            <button id="report-submit" class="primary-button">Submit</button>
+          </div>
         </div>
       </div>
 
@@ -227,12 +298,20 @@
     <script>
       const container = document.getElementById("neural-bg");
       if (container) {
-        new NeuralBackground(container, {
-          color: "#e47f63",
+        const readVar = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+        const buildConfig = () => ({
+          color: readVar("--neural-color") || "#e47f63",
+          trailColor: readVar("--neural-trail") || "0, 0, 0",
           trailOpacity: 0.08,
           particleCount: 520,
           speed: 0.7
         });
+        window.neuralBackground = new NeuralBackground(container, buildConfig());
+        window.updateNeuralBackground = () => {
+          if (window.neuralBackground) {
+            window.neuralBackground.setPalette(buildConfig());
+          }
+        };
       }
     </script>
     <script src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>

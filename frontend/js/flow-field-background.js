@@ -3,6 +3,7 @@ class NeuralBackground {
     this.container = container;
 
     this.color = options.color || "#6366f1";
+    this.trailColor = options.trailColor || "0, 0, 0";
     this.trailOpacity = options.trailOpacity || 0.15;
     this.particleCount = options.particleCount || 600;
     this.speed = options.speed || 1;
@@ -103,7 +104,7 @@ class NeuralBackground {
   }
 
   animate() {
-    this.ctx.fillStyle = `rgba(0, 0, 0, ${this.trailOpacity})`;
+    this.ctx.fillStyle = `rgba(${this.trailColor}, ${this.trailOpacity})`;
     this.ctx.fillRect(0, 0, this.width, this.height);
 
     this.particles.forEach((p) => {
@@ -116,6 +117,18 @@ class NeuralBackground {
 
   handleResize() {
     this.init();
+  }
+
+  setPalette(options = {}) {
+    if (options.color) {
+      this.color = options.color;
+    }
+    if (options.trailColor) {
+      this.trailColor = options.trailColor;
+    }
+    if (typeof options.trailOpacity === "number") {
+      this.trailOpacity = options.trailOpacity;
+    }
   }
 
   handleMouseMove(e) {

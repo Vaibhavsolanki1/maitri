@@ -2,64 +2,105 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MAITRI - Yoga Flow</title>
   <link rel="stylesheet" href="css/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
-  <style>
-    .yoga-container { padding: 40px; text-align: center; }
-    .pose-cards { display: flex; gap: 20px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
-    .pose-card { background: var(--panel); border: 1px solid var(--panel-border); padding: 30px; border-radius: var(--radius); cursor: pointer; transition: transform 0.2s; min-width: 250px; box-shadow: var(--shadow); }
-    .pose-card:hover { transform: translateY(-5px); }
-    .camera-overlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; }
-    .camera-overlay.is-active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .camera-overlay video, .camera-overlay canvas { position: absolute; max-width: 100%; max-height: 100%; }
-    .overlay-ui { position: absolute; top: 20px; left: 20px; z-index: 1001; color: white; text-align: left; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 16px; backdrop-filter: blur(10px); }
-    .overlay-ui h2 { margin: 0 0 10px 0; }
-    .overlay-ui h1 { margin: 10px 0 0 0; font-size: 48px; color: var(--accent); }
-    .close-yoga { position: absolute; top: 20px; right: 20px; z-index: 1001; }
-  </style>
 </head>
 <body>
+  <div id="neural-bg" class="neural-container"></div>
   <div class="app">
     <header class="app-header">
       <div class="brand">
         <span class="brand-title">MAITRI</span>
         <span class="brand-subtitle">Yoga Flow</span>
       </div>
-      <button class="ghost-button" onclick="window.location.href='index.html'">Back to Chat</button>
+      <div class="status-row">
+        <div id="status" class="status-chip">Loading MoveNet...</div>
+        <button class="ghost-button" id="toggle-theme" type="button">Light mode</button>
+        <button class="ghost-button" type="button" onclick="window.location.href='index.html'">Back to Chat</button>
+      </div>
     </header>
     <main class="yoga-container">
-      <h2>Select a pose to begin</h2>
-      <div id="status" class="status-chip">Loading MoveNet...</div>
-      <div class="pose-cards">
-        <div class="pose-card" data-pose="mountain">
+      <section class="yoga-hero">
+        <div>
+          <h2>Select a pose to begin</h2>
+          <p>Hold each checkpoint for 1-2 seconds, then finish with a 10-second final hold.</p>
+        </div>
+        <div class="status-chip">Live posture feedback</div>
+      </section>
+      <section class="pose-grid">
+        <button class="pose-card" data-pose="mountain" type="button">
           <h3>Mountain Pose</h3>
-          <p>Wrists above nose</p>
-        </div>
-        <div class="pose-card" data-pose="tree">
+          <p>Grounded stance, arms overhead</p>
+        </button>
+        <button class="pose-card" data-pose="tree" type="button">
           <h3>Tree Pose</h3>
-          <p>Ankle near knee, arms up</p>
-        </div>
-        <div class="pose-card" data-pose="warrior2">
+          <p>Balance + steady breath</p>
+        </button>
+        <button class="pose-card" data-pose="warrior2" type="button">
           <h3>Warrior II</h3>
-          <p>Arms horizontal, lunge</p>
-        </div>
-      </div>
+          <p>Strong lunge, open chest</p>
+        </button>
+      </section>
     </main>
   </div>
 
-  <div class="camera-overlay" id="yoga-camera-overlay">
-    <video id="yoga-video" autoplay playsinline muted></video>
-    <canvas id="yoga-canvas"></canvas>
-    <div class="overlay-ui">
-      <h2 id="current-pose-name">Pose</h2>
-      <p id="pose-feedback">Stand in position</p>
-      <h1 id="pose-timer">10</h1>
+  <div class="yoga-overlay" id="yoga-camera-overlay">
+    <div class="yoga-session">
+      <div class="yoga-video-stage">
+        <video id="yoga-video" autoplay playsinline muted></video>
+        <canvas id="yoga-canvas"></canvas>
+        <div class="yoga-hud">
+          <span class="hud-title" id="current-pose-name">Pose</span>
+          <span class="hud-feedback" id="pose-feedback">Stand in position</span>
+          <span class="hud-timer" id="pose-timer">0</span>
+        </div>
+      </div>
+      <aside class="yoga-guide">
+        <div class="guide-header">
+          <div>
+            <span class="guide-label">Pose guide</span>
+            <h2 class="guide-title" id="guide-pose-name">Pose</h2>
+          </div>
+          <span class="status-chip" id="pose-stage">Step 1 of 4</span>
+        </div>
+        <ol class="guide-steps" id="pose-steps"></ol>
+        <div class="guide-progress">
+          <div class="progress-label">
+            <span id="pose-progress-label">Hold steady</span>
+            <span id="pose-progress-time">0s</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" id="pose-progress-fill"></div>
+          </div>
+        </div>
+        <button class="ghost-button yoga-close" id="close-yoga" type="button">End Session</button>
+      </aside>
     </div>
-    <button class="ghost-button close-yoga" id="close-yoga">End Session</button>
   </div>
 
+  <script src="js/flow-field-background.js"></script>
+  <script>
+    const yogaBg = document.getElementById("neural-bg");
+    if (yogaBg) {
+      const readVar = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+      const buildConfig = () => ({
+        color: readVar("--neural-color") || "#e47f63",
+        trailColor: readVar("--neural-trail") || "0, 0, 0",
+        trailOpacity: 0.08,
+        particleCount: 520,
+        speed: 0.7
+      });
+      window.neuralBackground = new NeuralBackground(yogaBg, buildConfig());
+      window.updateNeuralBackground = () => {
+        if (window.neuralBackground) {
+          window.neuralBackground.setPalette(buildConfig());
+        }
+      };
+    }
+  </script>
   <script src="js/yoga.js"></script>
 </body>
 </html>

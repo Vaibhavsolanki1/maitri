@@ -5,6 +5,8 @@ const axios = require("axios");
 const { MongoClient } = require("mongodb");
 const Sentiment = require("sentiment");
 const twilio = require("twilio");
+const path = require("path");
+const rateLimit = require("express-rate-limit");
 
 dotenv.config();
 
@@ -13,6 +15,20 @@ app.use(express.json({ limit: "1mb" }));
 
 const corsOrigin = process.env.CORS_ORIGIN || "*";
 app.use(cors({ origin: corsOrigin }));
+
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+const chatRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: { message: "Too many requests to /chat, please try again later." } }
+});
+
+const emergencyRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 3,
+  message: { error: { message: "Too many emergency requests, please try again later." } }
+});
 
 const config = {
   port: parseInt(process.env.PORT || "3000", 10),
@@ -84,7 +100,8 @@ function buildSystemPrompt({
   communicationStyle,
   humorPreference,
   overallMood,
-  vitals
+  vitals,
+  emotionHistory
 }) {
   const confidenceText =
     typeof emotionConfidence === "number"
@@ -93,17 +110,22 @@ function buildSystemPrompt({
   const vitalsText = vitals && typeof vitals === "object"
     ? `Vitals: HR ${vitals.hr ?? "n/a"}, SpO2 ${vitals.spo2 ?? "n/a"}, Temp ${vitals.temp ?? "n/a"}.`
     : "Vitals: n/a.";
+  const emotionHistoryText = Array.isArray(emotionHistory) && emotionHistory.length > 0
+    ? `Recent emotions: ${emotionHistory.join(", ")}.`
+    : "Recent emotions: n/a.";
   const toneGuidance = getToneGuidance(emotion);
 
   return [
     "You are MAITRI, a warm and supportive AI companion for people in isolated or stressful environments.",
     "Keep responses concise, empathetic, and actionable.",
     "Write like a human, not a robot. Use 2-4 short sentences unless the user asks for more detail.",
+    "If you want to trigger a wellness action, include a tag like [ACTION:breathing], [ACTION:music], or [ACTION:yoga] at the end of your response.",
     toneGuidance,
     `User name: ${userName}.`,
     `Detected emotion: ${emotion} ${confidenceText}.`,
     `Communication style: ${communicationStyle}. Humor preference: ${humorPreference}. Overall mood: ${overallMood}.`,
-    vitalsText
+    vitalsText,
+    emotionHistoryText
   ].join("\n");
 }
 
@@ -225,6 +247,7 @@ app.get("/health", (req, res) => {
 
 app.post(
   "/chat",
+  chatRateLimit,
   wrapAsync(async (req, res) => {
     const body = req.body || {};
     if (!requireStringField(body, "message", res)) {
@@ -237,6 +260,7 @@ app.post(
     const emotionConfidence =
       typeof body.emotionConfidence === "number" ? body.emotionConfidence : null;
     const vitals = body.vitals && typeof body.vitals === "object" ? body.vitals : null;
+    const emotionHistory = Array.isArray(body.emotionHistory) ? body.emotionHistory : [];
 
     const profiles = db.collection("user_profiles");
     const profile = await profiles.findOne({ userName });
@@ -257,7 +281,8 @@ app.post(
       communicationStyle: profile?.communicationStyle || "balanced",
       humorPreference: profile?.humorPreference || "low",
       overallMood: profile?.overallMood || "neutral",
-      vitals
+      vitals,
+      emotionHistory
     });
 
     const messages = [
@@ -266,7 +291,20 @@ app.post(
       { role: "user", content: message }
     ];
 
-    const reply = await callOpenRouter(messages);
+    let reply = await callOpenRouter(messages);
+    let action = null;
+    
+    const actionMatch = reply.match(/\[ACTION:(breathing|music|yoga)\]/i);
+    if (actionMatch) {
+      action = actionMatch[1].toLowerCase();
+      reply = reply.replace(/\[ACTION:[^\]]+\]/gi, "").trim();
+    } else {
+      const userMsgLower = message.toLowerCase();
+      if (userMsgLower.includes("relax") || userMsgLower.includes("music")) action = "music";
+      else if (userMsgLower.includes("breathe") || userMsgLower.includes("breathing")) action = "breathing";
+      else if (userMsgLower.includes("yoga") || userMsgLower.includes("stretch")) action = "yoga";
+    }
+
     const now = new Date();
 
     await db.collection("conversations").insertMany([
@@ -292,7 +330,7 @@ app.post(
       console.warn("Profile update failed:", error.message);
     });
 
-    res.json({ reply, userName, emotion, emotionConfidence });
+    res.json({ reply, userName, emotion, emotionConfidence, action });
   })
 );
 
@@ -366,9 +404,20 @@ app.get(
 
 app.post(
   "/api/emergency",
+  emergencyRateLimit,
   wrapAsync(async (req, res) => {
     const body = req.body || {};
     const userName = isNonEmptyString(body.userName) ? body.userName.trim() : "Guest";
+
+    const lastEmergency = await db.collection("emergencies").findOne(
+      { userName },
+      { sort: { timestamp: -1 } }
+    );
+    if (lastEmergency && (new Date() - lastEmergency.timestamp) < 60000) {
+      res.status(429).json({ error: { message: "Emergency cooldown active. Please wait 60 seconds." } });
+      return;
+    }
+
     const message = isNonEmptyString(body.message)
       ? body.message.trim()
       : "Emergency alert triggered.";
@@ -389,6 +438,28 @@ app.post(
 
     triggerEmergencyAlert(record).catch((error) => {
       console.warn("Emergency alert failed:", error.message);
+    });
+
+    res.json({ ok: true, id: result.insertedId });
+  })
+);
+
+app.post(
+  "/yoga",
+  wrapAsync(async (req, res) => {
+    const body = req.body || {};
+    const userName = isNonEmptyString(body.userName) ? body.userName.trim() : "Guest";
+    const pose = isNonEmptyString(body.pose) ? body.pose.trim() : "unknown";
+    const duration = typeof body.duration === "number" ? body.duration : 0;
+    const score = typeof body.score === "number" ? body.score : 0;
+    const now = new Date();
+
+    const result = await db.collection("yoga_sessions").insertOne({
+      userName,
+      pose,
+      duration,
+      score,
+      timestamp: now
     });
 
     res.json({ ok: true, id: result.insertedId });

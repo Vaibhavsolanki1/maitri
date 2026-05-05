@@ -5,8 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>MAITRI - Companion Mode</title>
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="manifest" href="manifest.json" />
   </head>
   <body>
+    <div id="startup-splash" style="position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s;">
+      <h1 class="brand-title" style="font-size: 48px; color: var(--accent);">MAITRI</h1>
+      <p style="color: var(--muted); margin-top: 10px;">Initializing Core Systems...</p>
+      <div class="typing-indicator" style="margin-top: 20px;">
+        <div class="typing-dot" style="background: var(--accent);"></div>
+        <div class="typing-dot" style="background: var(--accent);"></div>
+        <div class="typing-dot" style="background: var(--accent);"></div>
+      </div>
+    </div>
     <div id="neural-bg" class="neural-container"></div>
     <div class="app">
       <header class="app-header">
@@ -17,6 +27,7 @@
         <div class="status-row">
           <div class="status-chip" id="system-status">System ready</div>
           <button class="ghost-button" id="toggle-theme" type="button">Light mode</button>
+          <button class="ghost-button" type="button" onclick="window.location.href='details.html'">Dashboard</button>
         </div>
       </header>
 
@@ -143,19 +154,69 @@
               <span class="panel-tag">Wellness</span>
             </div>
             <div class="action-grid">
-              <button class="action-pill" type="button">Breathing</button>
-              <button class="action-pill" type="button">Calming audio</button>
-              <button class="action-pill" type="button">Yoga flow</button>
-              <button class="action-pill" type="button">Daily report</button>
-              <button class="action-pill" type="button">Emergency</button>
-              <button class="action-pill" type="button">Vitals check</button>
+              <button id="btn-breathing" class="action-pill" type="button">Breathing</button>
+              <button id="btn-audio" class="action-pill" type="button">Calming audio</button>
+              <button id="btn-yoga" class="action-pill" type="button">Yoga flow</button>
+              <button id="btn-report" class="action-pill" type="button">Daily report</button>
+              <button id="btn-emergency" class="action-pill" type="button">Emergency</button>
+              <button id="btn-vitals" class="action-pill" type="button">Vitals check</button>
             </div>
             <div class="action-footer">
-              <p>Actions are simulated in this UI shell. They will connect to live modules next.</p>
+              <p>All actions are live and connected to backend services.</p>
             </div>
           </section>
         </div>
       </main>
+
+      <!-- Modals / Overlays -->
+      <div id="overlay-breathing" class="modal-overlay" aria-hidden="true">
+        <div class="modal-card full-screen">
+          <button class="modal-close" type="button" aria-label="Close">&times;</button>
+          <div class="breathing-container" id="breathing-container">
+            <div class="breathing-circle"></div>
+            <p id="breathing-text">Ready</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="overlay-music" class="modal-overlay" aria-hidden="true">
+        <div class="modal-card">
+          <button class="modal-close" type="button" aria-label="Close">&times;</button>
+          <h2>Calming Audio</h2>
+          <audio id="music-player" loop>
+            <source src="assets/ambient.mp3" type="audio/mpeg">
+          </audio>
+          <div class="music-controls">
+            <button id="music-play" class="primary-button">Play</button>
+            <button id="music-pause" class="ghost-button">Pause</button>
+            <input type="range" id="music-volume" min="0" max="1" step="0.1" value="0.5" />
+          </div>
+        </div>
+      </div>
+
+      <div id="modal-report" class="modal-overlay" aria-hidden="true">
+        <div class="modal-card">
+          <button class="modal-close" type="button" aria-label="Close">&times;</button>
+          <h2>Daily Report</h2>
+          <textarea id="report-text" placeholder="How was your day?" rows="4"></textarea>
+          <button id="report-submit" class="primary-button">Submit</button>
+        </div>
+      </div>
+
+      <div id="modal-emergency" class="modal-overlay" aria-hidden="true">
+        <div class="modal-card alert-mode">
+          <button class="modal-close" type="button" aria-label="Close">&times;</button>
+          <h2>Emergency Protocol</h2>
+          <p>Triggering emergency response. This will alert your contacts and log current vitals.</p>
+          <div class="alert-vitals">
+            <span id="alert-hr">-- bpm</span> | <span id="alert-spo2">--%</span> | <span id="alert-temp">-- C</span>
+          </div>
+          <div class="alert-actions">
+            <button id="emergency-cancel" class="ghost-button">Cancel</button>
+            <button id="emergency-confirm" class="primary-button">CONFIRM EMERGENCY</button>
+          </div>
+        </div>
+      </div>
 
       <footer class="app-footer">
         <span>MAITRI v2.0 MVP - Local processing, compassionate guidance.</span>
@@ -174,7 +235,7 @@
         });
       }
     </script>
-    <script defer src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script defer src="js/app.js"></script>
   </body>
 </html>

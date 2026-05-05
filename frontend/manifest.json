@@ -1,0 +1,10 @@
+{
+  "name": "MAITRI Assistant",
+  "short_name": "MAITRI",
+  "description": "Companion Mode for isolated environments",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#10100f",
+  "theme_color": "#e47f63",
+  "icons": []
+}

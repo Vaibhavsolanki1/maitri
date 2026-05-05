@@ -1,0 +1,22 @@
+{
+  "name": "maitri-backend",
+  "version": "0.1.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "1.13.2",
+    "cors": "2.8.5",
+    "dotenv": "17.2.3",
+    "express": "5.2.1",
+    "mongodb": "6.21.0",
+    "sentiment": "5.0.2",
+    "twilio": "5.10.7"
+  },
+  "devDependencies": {
+    "nodemon": "3.1.11"
+  }
+}

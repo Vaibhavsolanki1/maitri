@@ -15,7 +15,8 @@
     "express-rate-limit": "^8.5.0",
     "mongodb": "6.21.0",
     "sentiment": "5.0.2",
-    "twilio": "5.10.7"
+    "twilio": "5.10.7",
+    "zod": "3.24.1"
   },
   "devDependencies": {
     "nodemon": "3.1.11"

@@ -1,3 +1,5 @@
+import { ENDPOINTS, getActiveUser } from "./modules/config.js";
+
 const toggleTheme = document.getElementById("toggle-theme");
 const video = document.getElementById("yoga-video");
 const canvas = document.getElementById("yoga-canvas");
@@ -317,11 +319,11 @@ async function completeSession() {
   isDetecting = false;
   
   try {
-    const userName = localStorage.getItem("maitriActiveUser") || "Guest";
-    await fetch("http://localhost:3000/yoga", {
+    const userName = getActiveUser();
+    await fetch(ENDPOINTS.yoga, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userName, pose: currentPose, duration: totalHoldSeconds, score: 100 })
+      body: JSON.stringify({ userName, pose: currentPose, duration: totalHoldSeconds, score: 95 })
     });
   } catch(e) {
     console.error(e);

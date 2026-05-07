@@ -1,9 +1,11 @@
+import { ENDPOINTS, getActiveUser } from "./modules/config.js";
+
 async function loadData() {
-  const userName = localStorage.getItem("maitriActiveUser") || "Guest";
+  const userName = getActiveUser();
   
   // Load History
   try {
-    const res = await fetch(`http://localhost:3000/history?userName=${userName}`);
+    const res = await fetch(`${ENDPOINTS.history}?userName=${encodeURIComponent(userName)}`);
     const data = await res.json();
     
     // Process emotions
@@ -40,16 +42,28 @@ async function loadData() {
   
   // Load Reports
   try {
-    const res = await fetch(`http://localhost:3000/reports?userName=${userName}`);
+    const res = await fetch(`${ENDPOINTS.reports}?userName=${encodeURIComponent(userName)}`);
     const data = await res.json();
     const list = document.getElementById("reports-list");
+    list.innerHTML = "";
+    
     if (data.items && data.items.length > 0) {
-      list.innerHTML = data.items.map(item => `
-        <div style="border-bottom: 1px solid var(--panel-border); padding: 15px 0;">
-          <strong style="color: var(--accent); font-size: 14px;">${new Date(item.timestamp).toLocaleString()}</strong>
-          <p style="margin-top: 8px;">${item.report}</p>
-        </div>
-      `).join('');
+      data.items.forEach(item => {
+        const div = document.createElement("div");
+        div.style.cssText = "border-bottom: 1px solid var(--panel-border); padding: 15px 0;";
+        
+        const strong = document.createElement("strong");
+        strong.style.cssText = "color: var(--accent); font-size: 14px;";
+        strong.textContent = new Date(item.timestamp).toLocaleString();
+        
+        const p = document.createElement("p");
+        p.style.cssText = "margin-top: 8px;";
+        p.textContent = item.report;
+        
+        div.appendChild(strong);
+        div.appendChild(p);
+        list.appendChild(div);
+      });
     } else {
       list.innerHTML = "<p>No reports found.</p>";
     }

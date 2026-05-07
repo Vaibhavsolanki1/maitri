@@ -81,7 +81,7 @@ OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxx
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/maitri_db
 
 # Optional (LLM config)
-OPENROUTER_MODEL=nvidia/nemotron-4-340b-instruct
+OPENROUTER_MODEL=nvidia/nemotron-nano-9b-v2:free
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 
 # Optional (CORS)
@@ -144,9 +144,11 @@ Base URL: http://localhost:3000
 | GET | /history | — | { userName, items } |
 | GET | /reports | — | { userName, items } |
 | POST | /chat | { message, emotion, userName, vitals, emotionHistory } | { reply, userName, emotion, emotionConfidence, action } |
+| POST | /chat/stream | { message, emotion, userName, vitals, emotionHistory } | SSE stream ({ token } + { done }) |
 | POST | /report | { report, userName } | { ok, id } |
 | POST | /yoga | { pose, duration, score, userName } | { ok, id } |
 | POST | /api/emergency | { vitals, location, userName, message, emotion } | { ok, id } |
+| GET | /api/weekly-report | — | { summary, highlights, concerns, suggestions } |
 
 See [Docs/architecture.md](Docs/architecture.md) for roadmap endpoints.
 

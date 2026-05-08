@@ -11,6 +11,8 @@ const {
   callOpenRouterStream
 } = require("../services/llm");
 const { updateUserProfile } = require("../services/sentiment");
+const { detectCrisis, getCrisisResponse } = require("../services/crisisDetection");
+const { triggerEmergencyAlert } = require("../services/twilio");
 
 const FREE_HISTORY_DAYS = 3;
 const DEFAULT_HISTORY_LIMIT = 20;
@@ -76,6 +78,73 @@ function createChatRouter({ db, config }) {
         vitals,
         emotionHistory
       } = parsed.data;
+
+      // CRISIS DETECTION: Check for self-harm, suicidal ideation, etc.
+      const crisisDetection = detectCrisis(message);
+      if (crisisDetection.isCrisis) {
+        // Log crisis event
+        await db.collection("crisis_alerts").insertOne({
+          userName,
+          message,
+          severity: crisisDetection.severity,
+          keywords: crisisDetection.keywords,
+          emotion,
+          vitals,
+          timestamp: new Date()
+        });
+
+        // Trigger emergency alert automatically
+        const emergencyRecord = {
+          userName,
+          message: `AUTOMATED CRISIS DETECTION - Severity: ${crisisDetection.severity}`,
+          vitals,
+          location: "unknown",
+          emotion,
+          timestamp: new Date(),
+          automatic: true
+        };
+
+        triggerEmergencyAlert(config, emergencyRecord).catch((error) => {
+          console.error("Emergency alert failed:", error.message);
+        });
+
+        // Send crisis response
+        const crisisReply = getCrisisResponse(crisisDetection.severity);
+        
+        await db.collection("conversations").insertOne({
+          role: "user",
+          content: message,
+          userName,
+          emotion,
+          emotionConfidence,
+          vitals,
+          emotionHistory,
+          isCrisis: true,
+          crisisSeverity: crisisDetection.severity,
+          timestamp: new Date()
+        });
+
+        await db.collection("conversations").insertOne({
+          role: "assistant",
+          content: crisisReply,
+          userName,
+          emotion: null,
+          emotionConfidence: null,
+          isCrisis: true,
+          timestamp: new Date()
+        });
+
+        return res.json({
+          reply: crisisReply,
+          userName,
+          emotion,
+          emotionConfidence,
+          action: "emergency",
+          isCrisis: true,
+          severity: crisisDetection.severity,
+          fallback: false
+        });
+      }
 
       const profile = await db
         .collection("user_profiles")
@@ -168,6 +237,79 @@ function createChatRouter({ db, config }) {
         vitals,
         emotionHistory
       } = parsed.data;
+
+      // CRISIS DETECTION: Check for self-harm, suicidal ideation, etc.
+      const crisisDetection = detectCrisis(message);
+      if (crisisDetection.isCrisis) {
+        // Log crisis event
+        await db.collection("crisis_alerts").insertOne({
+          userName,
+          message,
+          severity: crisisDetection.severity,
+          keywords: crisisDetection.keywords,
+          emotion,
+          vitals,
+          timestamp: new Date()
+        });
+
+        // Trigger emergency alert automatically
+        const emergencyRecord = {
+          userName,
+          message: `AUTOMATED CRISIS DETECTION - Severity: ${crisisDetection.severity}`,
+          vitals,
+          location: "unknown",
+          emotion,
+          timestamp: new Date(),
+          automatic: true
+        };
+
+        triggerEmergencyAlert(config, emergencyRecord).catch((error) => {
+          console.error("Emergency alert failed:", error.message);
+        });
+
+        // Send crisis response via stream
+        const crisisReply = getCrisisResponse(crisisDetection.severity);
+        
+        await db.collection("conversations").insertMany([
+          {
+            role: "user",
+            content: message,
+            userName,
+            emotion,
+            emotionConfidence,
+            vitals,
+            emotionHistory,
+            isCrisis: true,
+            crisisSeverity: crisisDetection.severity,
+            timestamp: new Date()
+          },
+          {
+            role: "assistant",
+            content: crisisReply,
+            userName,
+            emotion: null,
+            emotionConfidence: null,
+            isCrisis: true,
+            timestamp: new Date()
+          }
+        ]);
+
+        // Stream crisis response
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        if (typeof res.flushHeaders === "function") {
+          res.flushHeaders();
+        }
+
+        const lines = crisisReply.split("\n");
+        for (const line of lines) {
+          res.write(`data: ${JSON.stringify({ token: line, done: false })}\n\n`);
+        }
+        res.write(`data: ${JSON.stringify({ token: "", done: true, isCrisis: true, severity: crisisDetection.severity })}\n\n`);
+        res.end();
+        return;
+      }
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");

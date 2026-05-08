@@ -1,10 +1,9 @@
-const express = require("express");
-const { yogaSchema } = require("../models/validators");
-const { asyncHandler } = require("../middleware/asyncHandler");
-const { z } = require("zod");
+/**
+ * Yoga Poses Database
+ * Comprehensive library of yoga poses organized by difficulty
+ */
 
-// Advanced Yoga Pose Library
-const YOGA_POSES_LIBRARY = {
+export const YOGA_POSES = {
   beginner: [
     {
       id: "mountain",
@@ -12,6 +11,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Tadasana",
       difficulty: "Beginner",
       duration: 30,
+      emoji: "⛰️",
       description: "A grounding foundation pose that builds awareness and alignment.",
       benefits: ["Improves posture", "Strengthens legs", "Builds focus"],
       keyPoints: [
@@ -29,7 +29,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Steady, natural breathing",
       modifications: "Use wall for support",
-      safetyTips: "Avoid looking down, keep chest open"
+      safetyTips: "Avoid looking down, keep chest open",
+      criticalJoints: ["shoulders", "hips", "knees", "ankles"]
     },
     {
       id: "tree",
@@ -37,6 +38,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Vrksasana",
       difficulty: "Beginner",
       duration: 30,
+      emoji: "🌳",
       description: "A balancing pose that cultivates stability and inner peace.",
       benefits: ["Improves balance", "Strengthens legs", "Opens hips"],
       keyPoints: [
@@ -54,7 +56,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Deep belly breathing",
       modifications: "Use wall for support",
-      safetyTips: "Don't place foot on knee"
+      safetyTips: "Don't place foot on knee",
+      criticalJoints: ["left_knee", "right_hip", "ankles", "shoulders"]
     },
     {
       id: "child",
@@ -62,6 +65,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Balasana",
       difficulty: "Beginner",
       duration: 60,
+      emoji: "👶",
       description: "A restorative pose perfect for rest and relaxation.",
       benefits: ["Relieves stress", "Stretches back", "Calms mind"],
       keyPoints: [
@@ -79,7 +83,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Slow, deep breathing",
       modifications: "Place pillow under chest",
-      safetyTips: "Knees should be comfortable"
+      safetyTips: "Knees should be comfortable",
+      criticalJoints: ["hips", "knees", "ankles", "spine"]
     },
     {
       id: "cobra",
@@ -87,6 +92,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Bhujangasana",
       difficulty: "Beginner",
       duration: 30,
+      emoji: "🐍",
       description: "A backbend that opens the chest and strengthens the spine.",
       benefits: ["Opens chest", "Strengthens arms", "Energizes body"],
       keyPoints: [
@@ -104,7 +110,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Steady breaths",
       modifications: "Keep elbows bent",
-      safetyTips: "Don't strain neck"
+      safetyTips: "Don't strain neck",
+      criticalJoints: ["shoulders", "elbows", "wrists", "spine"]
     },
     {
       id: "catcow",
@@ -112,6 +119,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Marjaryasana-Bitilasana",
       difficulty: "Beginner",
       duration: 45,
+      emoji: "🐱",
       description: "A flowing warm-up that mobilizes the spine.",
       benefits: ["Warms up spine", "Builds flexibility", "Calms mind"],
       keyPoints: [
@@ -129,7 +137,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Synced with movement",
       modifications: "Move gently",
-      safetyTips: "Don't force range"
+      safetyTips: "Don't force range",
+      criticalJoints: ["shoulders", "wrists", "spine", "hips"]
     }
   ],
   intermediate: [
@@ -139,6 +148,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Virabhadrasana I",
       difficulty: "Intermediate",
       duration: 45,
+      emoji: "⚔️",
       description: "A powerful standing pose that builds strength and focus.",
       benefits: ["Builds leg strength", "Opens hips", "Improves focus"],
       keyPoints: [
@@ -156,7 +166,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Deep, steady breaths",
       modifications: "Hands on hips",
-      safetyTips: "Keep front knee aligned"
+      safetyTips: "Keep front knee aligned",
+      criticalJoints: ["hips", "knees", "ankles", "shoulders"]
     },
     {
       id: "warrior2",
@@ -164,6 +175,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Virabhadrasana II",
       difficulty: "Intermediate",
       duration: 45,
+      emoji: "⚔️",
       description: "A lateral pose that opens hips and strengthens legs.",
       benefits: ["Opens hips", "Builds endurance", "Improves stability"],
       keyPoints: [
@@ -181,7 +193,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Steady, powerful breaths",
       modifications: "Shorter stance",
-      safetyTips: "Don't let knee collapse inward"
+      safetyTips: "Don't let knee collapse inward",
+      criticalJoints: ["hips", "knees", "ankles", "shoulders"]
     },
     {
       id: "triangle",
@@ -189,6 +202,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Trikonasana",
       difficulty: "Intermediate",
       duration: 40,
+      emoji: "📐",
       description: "A lateral stretch that opens the hips and hamstrings.",
       benefits: ["Stretches sides", "Opens hamstrings", "Strengthens legs"],
       keyPoints: [
@@ -206,7 +220,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Deep lateral breathing",
       modifications: "Use block under hand",
-      safetyTips: "Don't bend at waist"
+      safetyTips: "Don't bend at waist",
+      criticalJoints: ["hips", "knees", "ankles", "shoulders"]
     },
     {
       id: "bridge",
@@ -214,6 +229,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Setu Bandha Sarvangasana",
       difficulty: "Intermediate",
       duration: 45,
+      emoji: "🌉",
       description: "A restorative backbend that opens the chest and hips.",
       benefits: ["Opens chest", "Strengthens glutes", "Calms mind"],
       keyPoints: [
@@ -231,7 +247,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Steady, supported breaths",
       modifications: "Block under sacrum",
-      safetyTips: "Don't turn head"
+      safetyTips: "Don't turn head",
+      criticalJoints: ["hips", "knees", "shoulders", "spine"]
     },
     {
       id: "boat",
@@ -239,6 +256,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Navasana",
       difficulty: "Intermediate",
       duration: 30,
+      emoji: "🚤",
       description: "A challenging core strengthener that builds power.",
       benefits: ["Strengthens core", "Builds balance", "Improves focus"],
       keyPoints: [
@@ -256,7 +274,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Deep core breathing",
       modifications: "Keep knees bent",
-      safetyTips: "Avoid straining neck"
+      safetyTips: "Avoid straining neck",
+      criticalJoints: ["hips", "knees", "spine", "shoulders"]
     }
   ],
   advanced: [
@@ -266,6 +285,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Bakasana",
       difficulty: "Advanced",
       duration: 30,
+      emoji: "🐦",
       description: "An arm balance that requires strength and focus.",
       benefits: ["Builds arm strength", "Improves focus", "Boosts confidence"],
       keyPoints: [
@@ -283,7 +303,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Steady, focused breaths",
       modifications: "Keep one foot on ground",
-      safetyTips: "Practice near wall"
+      safetyTips: "Practice near wall",
+      criticalJoints: ["shoulders", "elbows", "wrists", "core"]
     },
     {
       id: "headstand",
@@ -291,6 +312,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Sirsasana",
       difficulty: "Advanced",
       duration: 30,
+      emoji: "🤸",
       description: "An inversion that reverses blood flow and builds strength.",
       benefits: ["Improves circulation", "Strengthens shoulders", "Calms mind"],
       keyPoints: [
@@ -308,7 +330,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Calm, steady breaths",
       modifications: "Wall support",
-      safetyTips: "Never force, build gradually"
+      safetyTips: "Never force, build gradually",
+      criticalJoints: ["shoulders", "neck", "core", "spine"]
     },
     {
       id: "wheel",
@@ -316,6 +339,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Urdhva Mukha Svanasana",
       difficulty: "Advanced",
       duration: 30,
+      emoji: "🎡",
       description: "A deep backbend that opens the entire front body.",
       benefits: ["Opens entire front", "Strengthens back", "Energizes body"],
       keyPoints: [
@@ -333,7 +357,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Deep, supported breaths",
       modifications: "Stay on forearms",
-      safetyTips: "Warm up thoroughly first"
+      safetyTips: "Warm up thoroughly first",
+      criticalJoints: ["shoulders", "elbows", "wrists", "spine"]
     },
     {
       id: "sideplank",
@@ -341,6 +366,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Vasisthasana",
       difficulty: "Advanced",
       duration: 30,
+      emoji: "📍",
       description: "A lateral strengthener that builds oblique and shoulder power.",
       benefits: ["Strengthens shoulders", "Builds obliques", "Improves stability"],
       keyPoints: [
@@ -358,7 +384,8 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Steady, powerful breaths",
       modifications: "Lower knee down",
-      safetyTips: "Keep hips high"
+      safetyTips: "Keep hips high",
+      criticalJoints: ["shoulders", "wrists", "hips", "core"]
     },
     {
       id: "kingpigeon",
@@ -366,6 +393,7 @@ const YOGA_POSES_LIBRARY = {
       sanskrit: "Raja Eka Pada Rajakapotasana",
       difficulty: "Advanced",
       duration: 45,
+      emoji: "🕊️",
       description: "A deep backbend and hip opener for advanced practitioners.",
       benefits: ["Massive hip opening", "Deep backbend", "Builds flexibility"],
       keyPoints: [
@@ -383,243 +411,50 @@ const YOGA_POSES_LIBRARY = {
       ],
       breathing: "Deep hip breathing",
       modifications: "Stay in pigeon",
-      safetyTips: "Go slowly, respect limits"
+      safetyTips: "Go slowly, respect limits",
+      criticalJoints: ["hips", "knees", "spine", "shoulders"]
     }
   ]
 };
 
-function createYogaRouter({ db }) {
-  const router = express.Router();
+export class PoseLibrary {
+  constructor() {
+    this.poses = YOGA_POSES;
+  }
 
-  // Get all poses (grouped by difficulty)
-  router.get(
-    "/poses",
-    asyncHandler(async (req, res) => {
-      return res.json({
-        ok: true,
-        data: YOGA_POSES_LIBRARY,
-        total: Object.values(YOGA_POSES_LIBRARY).flat().length
-      });
-    })
-  );
+  getPoseById(id) {
+    for (const category of Object.values(this.poses)) {
+      const pose = category.find(p => p.id === id);
+      if (pose) return pose;
+    }
+    return null;
+  }
 
-  // Get single pose by ID
-  router.get(
-    "/poses/:id",
-    asyncHandler(async (req, res) => {
-      const { id } = req.params;
-      for (const category of Object.values(YOGA_POSES_LIBRARY)) {
-        const pose = category.find(p => p.id === id);
-        if (pose) {
-          return res.json({ ok: true, data: pose });
-        }
-      }
-      return res.status(404).json({ error: { message: "Pose not found" } });
-    })
-  );
+  getPosesByDifficulty(difficulty) {
+    return this.poses[difficulty] || [];
+  }
 
-  // Start a new yoga session
-  const sessionSchema = z.object({
-    userName: z.string().default("Guest"),
-    poseId: z.string(),
-    difficulty: z.string().default("beginner")
-  });
+  getAllPoses() {
+    return Object.values(this.poses).flat();
+  }
 
-  router.post(
-    "/sessions/start",
-    asyncHandler(async (req, res) => {
-      const parsed = sessionSchema.safeParse(req.body || {});
-      if (!parsed.success) {
-        return res.status(400).json({
-          error: { message: "Invalid request body.", details: parsed.error.flatten() }
-        });
-      }
+  getCategorized() {
+    return this.poses;
+  }
 
-      const { userName, poseId, difficulty } = parsed.data;
-      const now = new Date();
+  getRandomPose(difficulty = null) {
+    const poses = difficulty ? this.getPosesByDifficulty(difficulty) : this.getAllPoses();
+    return poses[Math.floor(Math.random() * poses.length)];
+  }
 
-      const session = {
-        userName,
-        poseId,
-        difficulty,
-        startTime: now,
-        steps: [],
-        totalAccuracy: 0,
-        sessionStatus: "active",
-        completedSteps: 0
-      };
-
-      const result = await db.collection("yoga_sessions").insertOne(session);
-
-      return res.json({
-        ok: true,
-        sessionId: result.insertedId,
-        message: "Session started successfully"
-      });
-    })
-  );
-
-  // Record step completion with accuracy data
-  const stepSchema = z.object({
-    sessionId: z.string(),
-    stepIndex: z.number(),
-    accuracy: z.number().min(0).max(100),
-    duration: z.number().min(0),
-    feedback: z.string().optional()
-  });
-
-  router.post(
-    "/sessions/step",
-    asyncHandler(async (req, res) => {
-      const parsed = stepSchema.safeParse(req.body || {});
-      if (!parsed.success) {
-        return res.status(400).json({
-          error: { message: "Invalid request body.", details: parsed.error.flatten() }
-        });
-      }
-
-      const { sessionId, stepIndex, accuracy, duration, feedback } = parsed.data;
-
-      const updateResult = await db.collection("yoga_sessions").findOneAndUpdate(
-        { _id: new (require("mongodb")).ObjectId(sessionId) },
-        {
-          $push: {
-            steps: {
-              index: stepIndex,
-              accuracy,
-              duration,
-              feedback,
-              timestamp: new Date()
-            }
-          },
-          $inc: { completedSteps: 1, totalAccuracy: accuracy }
-        },
-        { returnDocument: "after" }
-      );
-
-      if (!updateResult.value) {
-        return res.status(404).json({ error: { message: "Session not found" } });
-      }
-
-      return res.json({
-        ok: true,
-        session: updateResult.value,
-        message: "Step recorded successfully"
-      });
-    })
-  );
-
-  // Complete session
-  const completeSchema = z.object({
-    sessionId: z.string(),
-    totalDuration: z.number().min(0),
-    overallAccuracy: z.number().min(0).max(100)
-  });
-
-  router.post(
-    "/sessions/complete",
-    asyncHandler(async (req, res) => {
-      const parsed = completeSchema.safeParse(req.body || {});
-      if (!parsed.success) {
-        return res.status(400).json({
-          error: { message: "Invalid request body.", details: parsed.error.flatten() }
-        });
-      }
-
-      const { sessionId, totalDuration, overallAccuracy } = parsed.data;
-      const now = new Date();
-
-      const result = await db.collection("yoga_sessions").findOneAndUpdate(
-        { _id: new (require("mongodb")).ObjectId(sessionId) },
-        {
-          $set: {
-            endTime: now,
-            totalDuration,
-            finalAccuracy: overallAccuracy,
-            sessionStatus: "completed"
-          }
-        },
-        { returnDocument: "after" }
-      );
-
-      if (!result.value) {
-        return res.status(404).json({ error: { message: "Session not found" } });
-      }
-
-      return res.json({
-        ok: true,
-        session: result.value,
-        message: "Session completed successfully"
-      });
-    })
-  );
-
-  // Get user's yoga history
-  router.get(
-    "/history/:userName",
-    asyncHandler(async (req, res) => {
-      const { userName } = req.params;
-
-      const sessions = await db
-        .collection("yoga_sessions")
-        .find({ userName, sessionStatus: "completed" })
-        .sort({ endTime: -1 })
-        .limit(20)
-        .toArray();
-
-      const stats = {
-        totalSessions: sessions.length,
-        totalMinutes: sessions.reduce((acc, s) => acc + (s.totalDuration || 0), 0) / 60,
-        averageAccuracy: sessions.length
-          ? sessions.reduce((acc, s) => acc + (s.finalAccuracy || 0), 0) / sessions.length
-          : 0,
-        mostPracticedPose: sessions.length
-          ? Object.keys(
-              sessions.reduce((acc, s) => {
-                acc[s.poseId] = (acc[s.poseId] || 0) + 1;
-                return acc;
-              }, {})
-            ).sort((a, b) => sessions.filter(s => s.poseId === b).length - sessions.filter(s => s.poseId === a).length)[0]
-          : null
-      };
-
-      return res.json({
-        ok: true,
-        stats,
-        sessions: sessions.slice(0, 10)
-      });
-    })
-  );
-
-  // Legacy endpoint for backward compatibility
-  router.post(
-    "/yoga",
-    asyncHandler(async (req, res) => {
-      const parsed = yogaSchema.safeParse(req.body || {});
-      if (!parsed.success) {
-        return res.status(400).json({
-          error: { message: "Invalid request body.", details: parsed.error.flatten() }
-        });
-      }
-
-      const { userName, pose, duration, score } = parsed.data;
-      const now = new Date();
-
-      const result = await db.collection("yoga_sessions").insertOne({
-        userName,
-        poseId: pose,
-        totalDuration: duration,
-        finalAccuracy: score,
-        sessionStatus: "completed",
-        endTime: now,
-        timestamp: now
-      });
-
-      return res.json({ ok: true, id: result.insertedId });
-    })
-  );
-
-  return router;
+  searchPoses(query) {
+    const q = query.toLowerCase();
+    return this.getAllPoses().filter(
+      p => p.name.toLowerCase().includes(q) || 
+           p.sanskrit.toLowerCase().includes(q) ||
+           p.description.toLowerCase().includes(q)
+    );
+  }
 }
 
-module.exports = { createYogaRouter };
+export default new PoseLibrary();

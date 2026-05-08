@@ -10,7 +10,8 @@ const STORAGE_KEYS = {
   sessions: "maitriSessions"
 };
 
-export const API_BASE = window.location.origin;
+// Point to backend on port 3000 (not the frontend dev server)
+export const API_BASE = "http://localhost:3000";
 
 export const ENDPOINTS = {
   chat: `${API_BASE}/chat`,

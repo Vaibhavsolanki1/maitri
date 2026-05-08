@@ -230,7 +230,15 @@ const chatController = createChatController({
       modalController.openMusic();
     } else if (action === "yoga") {
       window.location.href = "yoga.html";
+    } else if (action === "emergency") {
+      // Auto-trigger emergency response
+      modalController.showEmergency();
     }
+  },
+  onCrisis: (crisisData) => {
+    // Called when a crisis response is detected
+    console.warn("🚨 CRISIS DETECTED:", crisisData.severity);
+    modalController.showEmergency();
   },
   onRequireUpgrade: (feature) => tierGate.showUpgrade(feature),
   getContext: () => {

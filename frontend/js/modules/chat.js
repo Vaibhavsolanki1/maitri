@@ -63,6 +63,7 @@ export function createChatController({
   getContext,
   speakText,
   onAction,
+  onCrisis,
   onRequireUpgrade
 }) {
   const {
@@ -158,6 +159,14 @@ export function createChatController({
         onDone: (done) => {
           action = done.action || null;
           fallback = Boolean(done.fallback);
+          
+          // Check for crisis response
+          if (done.isCrisis && typeof onCrisis === "function") {
+            onCrisis({
+              severity: done.severity,
+              automatic: true
+            });
+          }
         }
       });
 
@@ -197,6 +206,14 @@ export function createChatController({
         replyText = typeof data.reply === "string" ? data.reply.trim() : "";
         action = data.action || null;
         fallback = Boolean(data.fallback);
+        
+        // Check for crisis response
+        if (data.isCrisis && typeof onCrisis === "function") {
+          onCrisis({
+            severity: data.severity,
+            automatic: true
+          });
+        }
       } catch (fetchError) {
         assistant.message.remove();
         const { message } = createMessageElement({

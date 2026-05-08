@@ -31,7 +31,7 @@ export class YogaPoseDetector {
       const Pose = window.Pose;
       
       this.pose = new Pose({
-        locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.4.1642600027/${file}`
+        locateFile: file => `node_modules/@mediapipe/pose/${file}`
       });
 
       this.pose.onResults(this.onPoseResults.bind(this));

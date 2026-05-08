@@ -46,6 +46,44 @@ function createMessageElement({ text, role, loading, fallback, speakText }) {
   return { message, content, meta };
 }
 
+const ACTION_LABELS = {
+  breathing: "Breathing Exercise",
+  music: "Calming Audio",
+  yoga: "Yoga Flow",
+  report: "Daily Report",
+  meditation: "Meditation"
+};
+
+function createActionConfirmElement(action, onConfirm, onDismiss) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "action-confirm";
+
+  const label = document.createElement("span");
+  label.className = "action-confirm-label";
+  label.textContent = `MAITRI suggests: ${ACTION_LABELS[action] || action}`;
+  wrapper.appendChild(label);
+
+  const startBtn = document.createElement("button");
+  startBtn.className = "primary-button action-confirm-btn";
+  startBtn.textContent = "Start";
+  startBtn.addEventListener("click", () => {
+    wrapper.remove();
+    onConfirm();
+  });
+  wrapper.appendChild(startBtn);
+
+  const dismissBtn = document.createElement("button");
+  dismissBtn.className = "ghost-button action-confirm-dismiss";
+  dismissBtn.textContent = "Dismiss";
+  dismissBtn.addEventListener("click", () => {
+    wrapper.remove();
+    onDismiss();
+  });
+  wrapper.appendChild(dismissBtn);
+
+  return wrapper;
+}
+
 function createTypingIndicator() {
   const wrapper = document.createElement("div");
   wrapper.className = "typing-indicator";
@@ -219,7 +257,22 @@ export function createChatController({
     }
 
     if (action && typeof onAction === "function") {
-      onAction(action);
+      const confirmUI = createActionConfirmElement(
+        action,
+        () => onAction(action),
+        () => {
+          if (typeof window.dismissPendingAction === "function") {
+            window.dismissPendingAction();
+          }
+        }
+      );
+      chatMessages.appendChild(confirmUI);
+      if (typeof window.setPendingAction === "function") {
+        window.setPendingAction(action, () => {
+          confirmUI.remove();
+          onAction(action);
+        });
+      }
     }
 
     setLoadingState(false);

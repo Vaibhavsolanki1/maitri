@@ -96,15 +96,27 @@ export function initSpeech({
   speechRecognition.interimResults = true;
   speechRecognition.continuous = true;
 
+  const speechStatusEl = document.getElementById("speech-status");
+
   speechRecognition.onstart = () => {
     updateMicUi(true, micButton, systemStatus);
     if (systemStatus && systemStatus.textContent !== "Offline") {
       systemStatus.textContent = "Listening";
     }
+    if (speechStatusEl) speechStatusEl.textContent = "Listening...";
   };
 
   speechRecognition.onend = () => {
-    updateMicUi(false, micButton, systemStatus);
+    if (speechStatusEl) speechStatusEl.textContent = "";
+    
+    // If not hidden, restart it automatically to fix Chrome's silence timeout
+    if (!document.hidden && micActive) {
+      setTimeout(() => {
+        try { speechRecognition.start(); } catch(e) {}
+      }, 1000);
+    } else {
+      updateMicUi(false, micButton, systemStatus);
+    }
   };
 
   speechRecognition.onerror = (event) => {
@@ -114,6 +126,9 @@ export function initSpeech({
       systemStatus.textContent = `Mic error: ${reason}`;
     }
   };
+
+  let speechDebounceTimer = null;
+  let accumulatedFinalText = "";
 
   speechRecognition.onresult = (event) => {
     let interim = "";
@@ -128,29 +143,69 @@ export function initSpeech({
       }
     }
 
-    const recognized = (finalTranscript || interim).trim();
-    if (!recognized) {
-      return;
-    }
-
-    const lowerTranscript = recognized.toLowerCase();
-    const wakeWordIndex = lowerTranscript.lastIndexOf("hey maitri");
-
-    if (wakeWordIndex !== -1 && finalTranscript) {
-      const textAfter = recognized.substring(wakeWordIndex + 10).trim();
-      if (textAfter && typeof onSendMessage === "function") {
-        onSendMessage(textAfter);
-      } else {
-        speakText("I am listening");
-      }
-      return;
-    }
-
     if (inputEl) {
-      inputEl.value = recognized;
-      if (finalTranscript) {
-        inputEl.focus();
+      if (interim) {
+        inputEl.placeholder = interim;
+        inputEl.value = accumulatedFinalText;
+      } else {
+        inputEl.placeholder = "Type your message...";
       }
+    }
+
+    if (finalTranscript) {
+      const lowerTranscript = finalTranscript.toLowerCase();
+      const wakeWordIndex = lowerTranscript.lastIndexOf("hey maitri");
+
+      if (wakeWordIndex !== -1) {
+        const textAfter = finalTranscript.substring(wakeWordIndex + 10).trim();
+        if (textAfter && typeof onSendMessage === "function") {
+          onSendMessage(textAfter);
+          accumulatedFinalText = "";
+          if (inputEl) inputEl.value = "";
+          return;
+        } else {
+          speakText("I am listening");
+          accumulatedFinalText = "";
+          if (inputEl) inputEl.value = "";
+          return;
+        }
+      }
+
+      if (window._pendingActionCallback) {
+        const confirmWords = ["yes", "sure", "okay", "ok", "go ahead", "start", "do it", "yeah", "haan", "chalo"];
+        const rejectWords = ["no", "cancel", "nevermind", "skip"];
+        
+        if (confirmWords.some(w => lowerTranscript.includes(w))) {
+          window._pendingActionCallback();
+          window.dismissPendingAction();
+          accumulatedFinalText = "";
+          if (inputEl) inputEl.value = "";
+          return;
+        } else if (rejectWords.some(w => lowerTranscript.includes(w))) {
+          window.dismissPendingAction();
+          accumulatedFinalText = "";
+          if (inputEl) inputEl.value = "";
+          return;
+        }
+      }
+
+      accumulatedFinalText += (accumulatedFinalText ? " " : "") + finalTranscript.trim();
+      
+      if (inputEl) {
+        inputEl.value = accumulatedFinalText;
+      }
+
+      if (speechDebounceTimer) {
+        clearTimeout(speechDebounceTimer);
+      }
+
+      speechDebounceTimer = setTimeout(() => {
+        if (accumulatedFinalText && typeof onSendMessage === "function") {
+          onSendMessage(accumulatedFinalText);
+          accumulatedFinalText = "";
+          if (inputEl) inputEl.value = "";
+        }
+      }, 1500);
     }
   };
 
@@ -162,8 +217,15 @@ export function initSpeech({
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && speechRecognition && micActive) {
       speechRecognition.stop();
+      if (speechStatusEl) speechStatusEl.textContent = "";
+    } else if (!document.hidden && speechRecognition && micActive) {
+      try { 
+        speechRecognition.start(); 
+        if (speechStatusEl) speechStatusEl.textContent = "Listening...";
+      } catch(e) {}
     }
   });
+
 
   if (micButton) {
     micButton.addEventListener("click", () => {

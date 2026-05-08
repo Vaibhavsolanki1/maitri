@@ -1,168 +1,267 @@
-# MAITRI v2.0
+# MAITRI v2.1
 
-Multi-modal AI Intelligent Therapeutic Real-time Interface
+> **M**ental health **A**I **I**nteractive **T**herapeutic **R**eal-time **I**nterface
 
-MAITRI is a privacy-first, edge AI companion that monitors emotion and basic vitals signals, then delivers supportive, actionable guidance for people in isolated or high-stress environments. All face/emotion processing runs locally in the browser.
+MAITRI is a privacy-first, edge AI companion that monitors emotion and basic vitals signals, then delivers supportive, actionable guidance for people in isolated or high-stress environments. Designed for astronaut psychological support during long-duration space missions.
 
-## Features
+Developed by **Vaibhav** for the **ISRO Space Apps Challenge**.
 
-- Real-time emotion detection with face-api.js (client-side only)
-- Face recognition for personalized context
-- Conversational AI with action triggers (breathing, music, yoga)
-- Voice interface with wake word "Hey MAITRI" and TTS responses
-- Hand gesture scroll control (MediaPipe Hands)
-- Vitals simulation (HR, SpO2, temperature) with live chart
-- Guided breathing exercise (4-phase cycle)
-- Calming audio library (ASMR, white noise, nature, rain, offshore beach)
-- Yoga flow with guided checkpoints and a 10s final hold
-- Mirrored camera feed for intuitive pose alignment
-- Daily report modal and project dashboard (Chart.js)
-- Emergency protocol with Twilio SMS/voice (optional)
-- PWA manifest for app-style install
+---
+
+## Highlights
+
+- **Real-time emotion detection** — face-api.js runs entirely in-browser, no video ever leaves the device
+- **Conversational AI** — context-aware LLM (NVIDIA Nemotron via OpenRouter) adapts tone to your detected emotion
+- **Voice interface** — wake word "Hey MAITRI" + speech-to-text + text-to-speech
+- **Action confirmation UX** — AI-suggested actions (breathing, music, yoga) require explicit consent before execution
+- **Guided wellness modules** — 4-phase breathing exercise, calming audio library, yoga flow with MoveNet pose tracking, meditation timer
+- **Emergency protocol** — one-tap SOS with Twilio SMS/voice call, geolocation, and vitals snapshot
+- **Adaptive personality** — sentiment analysis builds a per-user communication profile over time
+- **Hand gesture control** — MediaPipe Hands for gesture-based scroll navigation
+- **Face recognition** — on-device face enrollment for multi-profile support
+- **Custom layout editor** — drag-and-drop panel reordering from Settings
+- **Profile management** — multi-user switching, profile creation, and logout
+- **Premium design system** — dark/light mode, animated neural background, glassmorphism, custom-styled dropdowns and sliders
+- **PWA-ready** — manifest, service worker, offline caching
+- **Tiered feature gating** — Free/Pro tier system with upgrade prompts
+
+---
 
 ## Architecture
 
-Browser-side AI handles perception and feedback, while the Node.js backend orchestrates prompts, persistence, and alerts. No video, audio, or facial images leave the device.
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     BROWSER (Client)                         │
+│                                                              │
+│  Webcam → face-api.js → Emotion + Identity → Chat UI + TTS  │
+│  MoveNet (yoga) · MediaPipe Hands (gestures) · Web Speech    │
+│                                                              │
+│  All AI processing runs locally. No images leave the device. │
+└──────────────────────────┬───────────────────────────────────┘
+                           │ JSON: {message, emotion, vitals}
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  NODE.JS + EXPRESS SERVER                     │
+│                                                              │
+│  Routes: /chat  /chat/stream  /history  /report  /yoga       │
+│          /api/emergency  /api/weekly-report  /health          │
+│                                                              │
+│  Services: LLM (OpenRouter) · Sentiment · Twilio             │
+│  Middleware: Zod validation · Rate limiter · Tier guard       │
+│  Storage: MongoDB (conversations, profiles, reports, etc.)   │
+└─────────────────────────────────────────────────────────────┘
+```
 
-See [Docs/architecture.md](Docs/architecture.md) for full technical architecture.
+---
 
 ## Tech Stack
 
-Frontend:
-- HTML5 + Vanilla JavaScript
-- CSS custom properties (theme system)
-- face-api.js, TensorFlow.js MoveNet, MediaPipe Hands
-- Web Speech API (STT/TTS)
-- Chart.js
+| Layer | Technologies |
+|---|---|
+| **Frontend** | HTML5, Vanilla JS (ES Modules), CSS3 (custom properties, animations) |
+| **AI/ML (client)** | face-api.js, TensorFlow.js MoveNet, MediaPipe Hands |
+| **Voice** | Web Speech API (STT + TTS) |
+| **Charts** | Chart.js |
+| **Backend** | Node.js, Express |
+| **Database** | MongoDB (native driver) |
+| **LLM** | OpenRouter API (NVIDIA Nemotron) |
+| **Alerts** | Twilio (SMS + Voice) |
+| **Validation** | Zod |
+| **Security** | express-rate-limit, Helmet (recommended) |
 
-Backend:
-- Node.js + Express
-- MongoDB (native driver)
-- OpenRouter (LLM gateway)
-- Sentiment analysis
-- Twilio (optional)
-- express-rate-limit
+---
 
 ## Quick Start
 
-Prerequisites:
-- Node.js v18+
-- Google Chrome (for Web Speech STT)
-- OpenRouter API key
-- MongoDB Atlas cluster
-- Twilio account (optional)
+**Prerequisites:** Node.js v18+, Google Chrome, MongoDB Atlas cluster, OpenRouter API key
 
-Installation:
 ```bash
-# 1. Clone the repository
+# 1. Clone
 git clone https://github.com/Vaibhavsolanki1/maitri.git
 cd maitri
 
-# 2. Install backend dependencies
+# 2. Install
 cd backend
 npm install
 
-# 3. Create environment file
-# Create backend/.env with your API keys (see below)
+# 3. Configure environment
+cp .env.example .env
+# Edit .env with your API keys (see below)
 
-# 4. Start the backend server
+# 4. Start
 npm run dev
-# Server runs at http://localhost:3000 (serves the frontend)
+# → http://localhost:3000
 ```
 
-Open the app at http://localhost:3000 in Chrome for full voice support.
+---
 
 ## Environment Variables
 
-Create backend/.env:
+Create `backend/.env`:
+
 ```env
 # Required
 OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxx
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/maitri_db
 
-# Optional (LLM config)
+# Optional — LLM
 OPENROUTER_MODEL=nvidia/nemotron-nano-9b-v2:free
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 
-# Optional (CORS)
+# Optional — CORS
 CORS_ORIGIN=http://localhost:3000
 
-# Optional (Twilio emergency alerts)
+# Optional — Twilio emergency alerts
 TWILIO_ENABLED=false
 TWILIO_SID=ACxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxx
 TWILIO_FROM=+1xxxxxxxxxx
 EMERGENCY_TO=+91xxxxxxxxxx
 
-# Optional (server)
+# Optional — Server
 PORT=3000
 ```
+
+---
 
 ## Project Structure
 
 ```
 MAITRI/
 ├── backend/
-│   ├── .env
+│   ├── config/
+│   │   └── index.js              # Environment config + validation
+│   ├── db/
+│   │   └── indexes.js            # MongoDB index creation
+│   ├── middleware/
+│   │   ├── asyncHandler.js       # Express async error wrapper
+│   │   ├── errorHandler.js       # Global error handler
+│   │   ├── rateLimiter.js        # Chat + emergency rate limits
+│   │   └── tierGuard.js          # Free/Pro tier middleware
+│   ├── models/
+│   │   └── validators.js         # Zod schemas for all routes
+│   ├── routes/
+│   │   ├── chat.js               # /chat, /chat/stream, /history
+│   │   ├── emergency.js          # /api/emergency
+│   │   ├── health.js             # /health
+│   │   ├── report.js             # /report, /reports
+│   │   ├── wellness.js           # /api/weekly-report
+│   │   └── yoga.js               # /yoga
+│   ├── services/
+│   │   ├── llm.js                # OpenRouter LLM client (sync + streaming)
+│   │   ├── sentiment.js          # User profile sentiment analysis
+│   │   ├── twilio.js             # Emergency SMS + voice call
+│   │   └── weeklyReport.js       # AI-generated weekly wellness summary
+│   ├── .env / .env.example
 │   ├── package.json
-│   └── server.js
+│   └── server.js                 # Express app bootstrap
 ├── frontend/
-│   ├── index.html
-│   ├── details.html
-│   ├── yoga.html
-│   ├── manifest.json
 │   ├── css/
-│   │   └── styles.css
+│   │   └── styles.css            # Full design system (1900+ lines)
 │   ├── js/
-│   │   ├── app.js
-│   │   ├── details.js
-│   │   ├── flow-field-background.js
-│   │   └── yoga.js
+│   │   ├── app.js                # Main application controller
+│   │   ├── settings.js           # Settings page logic
+│   │   ├── details.js            # Dashboard page logic
+│   │   ├── yoga.js               # Yoga session page logic
+│   │   ├── meditation-page.js    # Meditation timer page logic
+│   │   ├── flow-field-background.js  # Neural particle animation
+│   │   └── modules/
+│   │       ├── camera.js         # Camera, face detection, recognition
+│   │       ├── chat.js           # Chat UI, message rendering, action confirmation
+│   │       ├── chatStream.js     # SSE streaming client
+│   │       ├── config.js         # LocalStorage config, profiles, layout, endpoints
+│   │       ├── emotions.js       # Emotion panel state management
+│   │       ├── gestures.js       # MediaPipe Hands gesture detection
+│   │       ├── meditation.js     # Meditation timer module
+│   │       ├── modals.js         # Breathing, music, report, emergency modals
+│   │       ├── notifications.js  # Browser notification check-ins
+│   │       ├── onboarding.js     # First-run onboarding flow
+│   │       ├── speech.js         # STT/TTS + voice action confirmation
+│   │       ├── theme.js          # Dark/light mode toggle
+│   │       ├── tier.js           # Client-side tier gating + upgrade modal
+│   │       └── vitals.js         # Simulated vitals + Chart.js graph
 │   ├── assets/
-│   │   └── ambient.mp3
-│   └── models/
-│       ├── tiny_face_detector_model-*
-│       ├── face_landmark_68_model-*
-│       ├── face_recognition_model-*
-│       └── face_expression_model-*
+│   │   └── ambient.mp3           # Audio library source
+│   ├── models/                   # face-api.js model weights
+│   ├── index.html                # Main companion interface
+│   ├── details.html              # Dashboard / analytics
+│   ├── settings.html             # Settings + layout editor
+│   ├── yoga.html                 # Yoga session page
+│   ├── meditation.html           # Meditation timer page
+│   ├── manifest.json             # PWA manifest
+│   └── sw.js                     # Service worker
 ├── Docs/
-│   ├── architecture.md
-│   ├── DEMO_SCRIPT.md
 │   ├── MAITRI_Complete_Documentation.md
-│   └── prd.md
+│   ├── architecture.md
+│   ├── prd.md
+│   ├── DEMO_SCRIPT.md
+│   ├── FILE_REFERENCE.md         # Every file explained
+│   └── PROJECT_STATUS.md         # Status, future scope, pitch
 ├── Dockerfile
+├── test_verification.js
 └── readme.md
 ```
 
+---
+
 ## API Reference
 
-Base URL: http://localhost:3000
+Base URL: `http://localhost:3000`
 
-| Method | Endpoint | Request Body | Response |
-|---|---|---|---|
-| GET | /health | — | { ok } |
-| GET | /history | — | { userName, items } |
-| GET | /reports | — | { userName, items } |
-| POST | /chat | { message, emotion, userName, vitals, emotionHistory } | { reply, userName, emotion, emotionConfidence, action } |
-| POST | /chat/stream | { message, emotion, userName, vitals, emotionHistory } | SSE stream ({ token } + { done }) |
-| POST | /report | { report, userName } | { ok, id } |
-| POST | /yoga | { pose, duration, score, userName } | { ok, id } |
-| POST | /api/emergency | { vitals, location, userName, message, emotion } | { ok, id } |
-| GET | /api/weekly-report | — | { summary, highlights, concerns, suggestions } |
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/health` | Server health check |
+| `POST` | `/chat` | Send message, get AI reply (JSON) |
+| `POST` | `/chat/stream` | Send message, get AI reply (SSE token stream) |
+| `GET` | `/history?userName=X&limit=N` | Fetch chat history |
+| `POST` | `/report` | Submit daily wellness report |
+| `GET` | `/reports?userName=X` | Fetch past reports |
+| `POST` | `/yoga` | Log a yoga session |
+| `POST` | `/api/emergency` | Trigger emergency protocol |
+| `GET` | `/api/weekly-report?userName=X` | AI-generated weekly wellness summary |
 
-See [Docs/architecture.md](Docs/architecture.md) for roadmap endpoints.
+---
 
-## Notes and Limitations
+## Key Features (v2.1)
 
-- Vitals are simulated (hardware integration pending).
-- Yoga evaluation is heuristic and should be expanded.
-- No authentication yet (single-user prototype).
-- Web Speech STT requires Chrome.
-- Audio library cards are placeholders until you add separate audio files.
+### Action Confirmation UX
+When MAITRI's AI suggests a wellness action (breathing, music, yoga), it no longer triggers automatically. A confirmation chip appears in the chat — the user must click "Start" or say "yes/sure/haan/chalo" via voice to proceed. Say "no/skip/cancel" to dismiss.
+
+### Custom Layout Editor
+In Settings, drag-and-drop the order of dashboard panels (Camera, Emotion, Vitals, Chat, Quick Actions). Layouts persist across sessions via localStorage.
+
+### Profile Management
+Switch between profiles, add new profiles, and log out — from both the main header and the Settings page. Logging out clears the active session and re-triggers onboarding.
+
+### Emergency Siren Cancel
+Clicking "Cancel" during an active emergency now immediately stops the siren audio oscillator, cancels vibration, and resets the UI state.
+
+---
+
+## Notes & Limitations
+
+- Vitals are simulated (real biometric hardware integration pending)
+- Yoga pose evaluation is heuristic-based (simplified angle checks)
+- No user authentication yet (profiles are local, tier is client-side)
+- Web Speech STT requires Chrome (Firefox/Safari have limited support)
+- Audio library cards currently share a single audio file
+- Face recognition profiles are stored in browser localStorage
+
+---
 
 ## Documentation
 
-- [Docs/architecture.md](Docs/architecture.md)
-- [Docs/MAITRI_Complete_Documentation.md](Docs/MAITRI_Complete_Documentation.md)
-- [Docs/prd.md](Docs/prd.md)
-- [Docs/DEMO_SCRIPT.md](Docs/DEMO_SCRIPT.md)
+| Document | Description |
+|---|---|
+| [Docs/MAITRI_Complete_Documentation.md](Docs/MAITRI_Complete_Documentation.md) | Full technical deep-dive |
+| [Docs/architecture.md](Docs/architecture.md) | System architecture & data flow |
+| [Docs/prd.md](Docs/prd.md) | Product requirements document |
+| [Docs/DEMO_SCRIPT.md](Docs/DEMO_SCRIPT.md) | Demo walkthrough script |
+| [Docs/FILE_REFERENCE.md](Docs/FILE_REFERENCE.md) | Every file explained |
+| [Docs/PROJECT_STATUS.md](Docs/PROJECT_STATUS.md) | Status, future scope & pitch |
+
+---
+
+## License
+
+Developed by Vaibhav for the ISRO Space Apps Challenge.

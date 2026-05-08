@@ -57,6 +57,10 @@ async function startServer() {
   app.use(createYogaRouter({ db }));
   app.use(createWellnessRouter({ db, config }));
 
+  app.get('*all', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+  });
+
   app.use(errorHandler);
 
   server = app.listen(config.port, () => {

@@ -93,7 +93,17 @@ function renderSteps(program) {
   program.checkpoints.forEach((step) => {
     const item = document.createElement("li");
     item.className = "guide-step";
-    item.innerHTML = `<span class="step-title">${step.title}</span><span class="step-detail">${step.detail}</span>`;
+    
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "step-title";
+    titleSpan.textContent = step.title;
+    
+    const detailSpan = document.createElement("span");
+    detailSpan.className = "step-detail";
+    detailSpan.textContent = step.detail;
+    
+    item.appendChild(titleSpan);
+    item.appendChild(detailSpan);
     poseSteps.appendChild(item);
   });
 }

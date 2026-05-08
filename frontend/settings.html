@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MAITRI - Settings</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="neural-bg" class="neural-container"></div>
+  <div class="app">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-title">MAITRI</span>
+        <span class="brand-subtitle">Settings</span>
+      </div>
+      <div class="status-row">
+        <button class="ghost-button" id="toggle-theme" type="button">Light mode</button>
+        <button class="ghost-button" type="button" onclick="window.location.href='index.html'">Back to Chat</button>
+      </div>
+    </header>
+    <main class="settings-grid" style="max-width: 600px; margin: 0 auto;">
+      <section class="settings-card">
+        <h3>Profile</h3>
+        <div class="settings-row">
+          <label>Active User</label>
+          <select id="setting-user-switch"></select>
+        </div>
+        <div class="settings-row" style="display: flex; gap: 8px;">
+          <input type="text" id="setting-new-profile" placeholder="New profile name" style="flex: 1;" />
+          <button class="ghost-button" id="setting-add-profile">Add</button>
+        </div>
+        <div class="settings-row" style="margin-top: 8px;">
+          <button class="ghost-button" id="setting-logout" style="width: 100%; border-color: rgba(244, 67, 54, 0.4); color: #F44336;">Log Out</button>
+        </div>
+      </section>
+
+      <section class="settings-card">
+        <h3>Voice & Speech</h3>
+        <div class="settings-row">
+          <label>Enable Text-to-Speech</label>
+          <select id="setting-tts">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <label>Voice Selection</label>
+          <select id="setting-voice"></select>
+        </div>
+      </section>
+
+      <section class="settings-card">
+        <h3>Tier Management</h3>
+        <div class="settings-row">
+          <label>Current Tier</label>
+          <select id="setting-tier">
+            <option value="free">MAITRI Free</option>
+            <option value="pro">MAITRI Pro</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="settings-card">
+        <h3>Layout Editor</h3>
+        <p style="font-size: 13px; color: var(--muted); margin: 0;">Drag to reorder dashboard panels.</p>
+        <div class="layout-editor" id="layout-editor">
+          <!-- Populated by JS -->
+        </div>
+        <div class="settings-row" style="display: flex; gap: 12px; margin-top: 8px;">
+          <button class="ghost-button" id="setting-reset-layout" style="flex: 1;">Reset Default</button>
+          <button class="primary-button" id="setting-save-layout" style="flex: 1;">Save Layout</button>
+        </div>
+      </section>
+
+      <section class="settings-card">
+        <h3>Privacy & Data</h3>
+        <div class="settings-row" style="display: flex; gap: 12px; margin-top: 8px;">
+          <button class="ghost-button" id="clear-face-data">Clear Face Data</button>
+          <button class="ghost-button" id="clear-all-data">Clear All Local Data</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/flow-field-background.js"></script>
+  <script>
+    const container = document.getElementById("neural-bg");
+    if (container) {
+      const readVar = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+      const buildConfig = () => ({
+        color: readVar("--neural-color") || "#e47f63",
+        trailColor: readVar("--neural-trail") || "0, 0, 0",
+        trailOpacity: 0.08,
+        particleCount: 520,
+        speed: 0.7
+      });
+      window.neuralBackground = new NeuralBackground(container, buildConfig());
+      window.updateNeuralBackground = () => {
+        if (window.neuralBackground) {
+          window.neuralBackground.setPalette(buildConfig());
+        }
+      };
+    }
+  </script>
+  <script type="module" src="js/settings.js"></script>
+</body>
+</html>

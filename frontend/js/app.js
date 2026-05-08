@@ -4,8 +4,10 @@ import {
   setActiveUser,
   getProfiles,
   addProfile,
+  logoutUser,
   getUserTier,
-  getTierFeatures
+  getTierFeatures,
+  getLayoutOrder
 } from "./modules/config.js";
 import { initTheme, bindThemeToggle } from "./modules/theme.js";
 import {
@@ -32,6 +34,7 @@ const elements = {
   chatMessages: document.getElementById("chat-messages"),
   systemStatus: document.getElementById("system-status"),
   toggleTheme: document.getElementById("toggle-theme"),
+  headerLogout: document.getElementById("header-logout"),
   enableCamera: document.getElementById("enable-camera"),
   chatMicButton: document.getElementById("chat-mic"),
   cameraPlaceholder: document.getElementById("camera-placeholder"),
@@ -103,7 +106,26 @@ const elements = {
   onboardingNotifications: document.getElementById("onboarding-notifications")
 };
 
+if (elements.headerLogout) {
+  elements.headerLogout.addEventListener("click", () => {
+    if (confirm("Are you sure you want to log out?")) {
+      logoutUser();
+      window.location.reload();
+    }
+  });
+}
+
 let activeUser = getActiveUser();
+
+window.setPendingAction = (action, confirmCallback) => {
+  window._pendingActionCallback = confirmCallback;
+};
+
+window.dismissPendingAction = () => {
+  window._pendingActionCallback = null;
+  const chip = document.querySelector(".action-confirm");
+  if (chip) chip.remove();
+};
 
 function updateActiveUserUi(name) {
   if (elements.activeUserLabel) {
@@ -398,6 +420,24 @@ window.setInterval(async () => {
     }
   }
 }, 30000);
+
+// Apply layout order immediately (DOM is ready since this is a module script)
+const layoutOrder = getLayoutOrder();
+const leftCol = document.querySelector('.column.left');
+const rightCol = document.querySelector('.column.right');
+
+if (leftCol && rightCol) {
+  layoutOrder.forEach((panelId, index) => {
+    const panel = document.querySelector(`[data-panel="${panelId}"]`);
+    if (panel) {
+      if (index < 3) {
+        leftCol.appendChild(panel);
+      } else {
+        rightCol.appendChild(panel);
+      }
+    }
+  });
+}
 
 window.addEventListener("load", () => {
   const splash = document.getElementById("startup-splash");

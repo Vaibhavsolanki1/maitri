@@ -22,6 +22,14 @@ function createWellnessRouter({ db, config }) {
     })
   );
 
+  router.post(
+    "/meditation",
+    asyncHandler(async (req, res) => {
+      // Stub endpoint for saving meditation sessions if needed
+      return res.json({ ok: true });
+    })
+  );
+
   return router;
 }
 

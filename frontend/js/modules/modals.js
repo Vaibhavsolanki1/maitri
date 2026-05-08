@@ -69,6 +69,13 @@ export function createModalController({
 
     if (musicPlayer) musicPlayer.pause();
     stopSiren();
+    if (navigator.vibrate) {
+      navigator.vibrate(0);
+    }
+    if (emergencyConfirm) {
+      emergencyConfirm.disabled = false;
+      emergencyConfirm.textContent = "CONFIRM EMERGENCY";
+    }
   }
 
   function startBreathingExercise() {
@@ -130,8 +137,12 @@ export function createModalController({
       sirenInterval = null;
     }
     if (sirenOscillator) {
-      sirenOscillator.stop();
-      sirenOscillator.disconnect();
+      try {
+        sirenOscillator.stop();
+        sirenOscillator.disconnect();
+      } catch (e) {
+        // Ignore errors if already stopped
+      }
       sirenOscillator = null;
     }
   }

@@ -130,6 +130,12 @@ export function setActiveUser(name) {
   return trimmed;
 }
 
+export function logoutUser() {
+  window.localStorage.removeItem(STORAGE_KEYS.activeUser);
+  window.localStorage.removeItem(STORAGE_KEYS.onboarded);
+  window.localStorage.setItem(STORAGE_KEYS.tier, "free");
+}
+
 export function getStoredVoice() {
   return window.localStorage.getItem(STORAGE_KEYS.voice) || "";
 }
@@ -140,6 +146,21 @@ export function setStoredVoice(name) {
   } else {
     window.localStorage.removeItem(STORAGE_KEYS.voice);
   }
+}
+
+export function getLayoutOrder() {
+  const defaultOrder = ["camera", "emotion", "vitals", "chat", "actions"];
+  const stored = window.localStorage.getItem("maitriLayout");
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch(e) {}
+  }
+  return defaultOrder;
+}
+
+export function setLayoutOrder(orderArray) {
+  window.localStorage.setItem("maitriLayout", JSON.stringify(orderArray));
 }
 
 export function isTtsEnabled() {

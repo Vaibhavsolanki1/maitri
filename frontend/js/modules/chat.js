@@ -326,8 +326,7 @@ export function createChatController({
         return;
       }
 
-      // Reverse the items so the latest message is at the bottom
-      [...items].reverse().forEach((item) => {
+      items.forEach((item) => {
         const role = item.role === "assistant" ? "system" : item.role || "system";
         const { message } = createMessageElement({
           text: item.content || "",

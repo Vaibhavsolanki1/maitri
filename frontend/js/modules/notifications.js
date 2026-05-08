@@ -9,6 +9,8 @@ function buildMessage(emotion) {
   return "Time for a quick MAITRI check-in?";
 }
 
+let checkInInterval = null;
+
 export function initNotifications() {
   if (!("Notification" in window)) {
     return;
@@ -23,7 +25,11 @@ export function initNotifications() {
     return;
   }
 
-  window.setInterval(() => {
+  if (checkInInterval) {
+    window.clearInterval(checkInInterval);
+  }
+
+  checkInInterval = window.setInterval(() => {
     const lastEmotion = getLastEmotion();
     const message = buildMessage(lastEmotion);
     new Notification("MAITRI", { body: message });

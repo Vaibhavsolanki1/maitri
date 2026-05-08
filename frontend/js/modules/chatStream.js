@@ -15,6 +15,7 @@ export async function streamChat({ url, payload, headers, onToken, onDone }) {
   const decoder = new TextDecoder();
   let buffer = "";
   let fullReply = "";
+  let parseErrors = 0;
 
   while (true) {
     const { value, done } = await reader.read();
@@ -61,7 +62,10 @@ export async function streamChat({ url, payload, headers, onToken, onDone }) {
           return { fullReply, done: parsed };
         }
       } catch (error) {
-        // Ignore malformed chunks.
+        parseErrors += 1;
+        if (parseErrors >= 3) {
+          throw new Error("Response format error");
+        }
       }
     }
   }

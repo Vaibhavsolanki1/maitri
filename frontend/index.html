@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="MAITRI Companion" />
     <title>MAITRI - Companion Mode</title>
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="manifest" href="manifest.json" />
@@ -31,12 +32,13 @@
           <button class="ghost-button" id="toggle-theme" type="button">Light mode</button>
           <button class="ghost-button" type="button" onclick="window.location.href='details.html'">Dashboard</button>
           <button class="ghost-button" type="button" onclick="window.location.href='settings.html'">Settings</button>
+          <button class="ghost-button" type="button" id="header-logout" style="border-color: rgba(244, 67, 54, 0.4); color: #F44336;">Log out</button>
         </div>
       </header>
 
       <main class="main-grid">
         <div class="column left">
-          <section class="panel camera-panel">
+          <section class="panel camera-panel" data-panel="camera">
             <div class="panel-header">
               <h2>Presence</h2>
               <span class="panel-tag">Camera</span>
@@ -53,93 +55,85 @@
                 <video id="camera-feed" autoplay playsinline muted></video>
                 <div class="camera-overlay">
                   <div class="camera-ring"></div>
-                  <p id="camera-status">Camera feed will appear here</p>
+                  <p id="camera-status">Checking readiness...</p>
                 </div>
               </div>
-              <div class="camera-progress" id="camera-progress" hidden>
-                <p id="camera-step">Loading face models...</p>
-                <div class="progress-bar">
-                  <div class="progress-bar-fill" id="camera-progress-fill"></div>
-                </div>
-                <button class="ghost-button" id="cancel-camera" type="button">Cancel</button>
-              </div>
-              <div class="add-profile-panel" id="add-profile-panel" aria-hidden="true">
+              <div id="add-profile-panel" class="add-profile-panel">
                 <div class="identity-actions">
-                  <input
-                    id="identity-name"
-                    type="text"
-                    placeholder="Add profile name"
-                    autocomplete="off"
-                  />
-                  <button class="ghost-button" type="button" id="enroll-face">Add profile</button>
+                  <input type="text" id="identity-name" placeholder="Enter name" />
+                  <button class="primary-button" id="enroll-face">Train Profile</button>
                 </div>
-                <p class="panel-note">We will take a quick snapshot to enroll this face.</p>
+                <div class="camera-progress" id="camera-progress" style="display: none;">
+                  <div class="progress-label">
+                    <span id="camera-step">Connecting...</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-bar-fill" id="camera-progress-fill"></div>
+                  </div>
+                  <button class="ghost-button cancel-camera" id="cancel-camera">Cancel</button>
+                </div>
               </div>
-              <button class="primary-button" type="button" id="enable-camera">Enable camera</button>
-              <p class="panel-note">Privacy: facial analysis runs on device. Only labels are shared.</p>
+              <button class="primary-button" id="enable-camera">Enable camera logic</button>
             </div>
+            <p class="panel-note">Real-time local vitals + emotion mapping.</p>
           </section>
 
-          <section class="panel emotion-panel">
+          <section class="panel" data-panel="emotion">
             <div class="panel-header">
-              <h2>Emotion pulse</h2>
-              <span class="panel-tag" id="emotion-mode">Simulated</span>
+              <h2>Emotion State</h2>
+              <button class="ghost-button" id="emotion-mode" type="button">Live View</button>
             </div>
             <div class="emotion-grid">
               <div class="emotion-card">
-                <div class="emotion-label" id="emotion-label">Neutral</div>
-                <div class="emotion-confidence" id="emotion-confidence">Confidence 72%</div>
+                <div class="emotion-label" id="emotion-label">--</div>
+                <div class="emotion-confidence" id="emotion-confidence">Awaiting feed</div>
               </div>
               <div class="emotion-meta">
                 <div class="meta-item">
                   <span class="meta-title">Trend</span>
-                  <span class="meta-value" id="emotion-trend">Steady</span>
+                  <span class="meta-value" id="emotion-trend">--</span>
                 </div>
                 <div class="meta-item">
-                  <span class="meta-title">Last update</span>
-                  <span class="meta-value" id="emotion-updated">Just now</span>
+                  <span class="meta-title">Last mapped</span>
+                  <span class="meta-value" id="emotion-updated">--</span>
                 </div>
               </div>
             </div>
           </section>
 
-          <section class="panel vitals-panel">
+          <section class="panel vitals-panel" data-panel="vitals">
             <div class="panel-header">
-              <h2>Vitals snapshot</h2>
-              <span class="panel-tag">Simulated</span>
+              <h2>Vitals</h2>
+              <span class="panel-tag">PPG Analysis</span>
             </div>
             <div class="vitals-grid">
               <div class="vital">
-                <span class="vital-label">Heart rate</span>
-                <span class="vital-value" id="vital-hr">78 bpm</span>
+                <span class="vital-label">HR</span>
+                <span class="vital-value" id="vital-hr">--</span>
               </div>
               <div class="vital">
                 <span class="vital-label">SpO2</span>
-                <span class="vital-value" id="vital-spo2">97%</span>
+                <span class="vital-value" id="vital-spo2">--</span>
               </div>
               <div class="vital">
-                <span class="vital-label">Temperature</span>
-                <span class="vital-value" id="vital-temp">36.9 C</span>
+                <span class="vital-label">Temp</span>
+                <span class="vital-value" id="vital-temp">--</span>
               </div>
             </div>
-            <canvas id="vitals-chart" width="520" height="120" aria-label="Heart rate history"></canvas>
+            <canvas id="vitals-chart"></canvas>
             <div class="vitals-footer">
-              <span id="vitals-updated">Updated just now</span>
-              <span class="vitals-note">Rolling 60 second window</span>
+              <span>Updated: <span id="vitals-updated">--</span></span>
             </div>
           </section>
         </div>
 
         <div class="column right">
-          <section class="panel chat-panel">
+          <section class="panel chat-panel" data-panel="chat">
             <div class="panel-header">
-              <h2>Companion chat</h2>
-              <span class="panel-tag">Core</span>
+              <h2>Assistant Chat</h2>
+              <span class="panel-tag">MAITRI Engine</span>
             </div>
             <div class="chat-window" id="chat-messages">
-              <div class="message system">
-                <p>Welcome back. I am here with you. How are you feeling?</p>
-                <span class="message-meta">MAITRI</span>
               </div>
             </div>
             <form class="chat-input" id="chat-form">
@@ -152,50 +146,53 @@
               <button class="ghost-button mic-button" type="button" id="chat-mic">🎤</button>
               <button class="primary-button" type="submit">Send</button>
             </form>
-            <div class="chat-hints">
-              <span>Try: "I feel overwhelmed today."</span>
-              <span>Or say: "Start breathing exercise."</span>
+            <div class="chat-hints" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span>Try: "I feel overwhelmed today."</span>
+                <span>Or say: "Start breathing exercise."</span>
+              </div>
+              <span id="speech-status" style="font-size: 12px; color: var(--muted); font-style: italic;"></span>
             </div>
           </section>
 
-          <section class="panel actions-panel">
+          <section class="panel actions-panel" data-panel="actions">
             <div class="panel-header">
               <h2>Quick actions</h2>
               <span class="panel-tag">Wellness</span>
             </div>
             <div class="action-grid">
               <button id="btn-breathing" class="action-card" type="button">
-                <span class="action-icon">🫁</span>
+                <span class="action-icon"></span>
                 <span class="action-title">Breathing</span>
                 <span class="action-subtitle">4-phase calming cycle</span>
               </button>
               <button id="btn-audio" class="action-card" type="button">
-                <span class="action-icon">🎧</span>
+                <span class="action-icon"></span>
                 <span class="action-title">Calming audio</span>
                 <span class="action-subtitle">ASMR, nature, rain</span>
               </button>
               <button id="btn-yoga" class="action-card" type="button">
-                <span class="action-icon">🧘</span>
+                <span class="action-icon"></span>
                 <span class="action-title">Yoga flow</span>
                 <span class="action-subtitle">Guided pose routines</span>
               </button>
               <button id="btn-report" class="action-card" type="button">
-                <span class="action-icon">📝</span>
+                <span class="action-icon"></span>
                 <span class="action-title">Daily report</span>
                 <span class="action-subtitle">Reflect and track your day</span>
               </button>
               <button id="btn-emergency" class="action-card" type="button">
-                <span class="action-icon">🚨</span>
+                <span class="action-icon"></span>
                 <span class="action-title">Emergency</span>
                 <span class="action-subtitle">Rapid response protocol</span>
               </button>
               <button id="btn-meditation" class="action-card" type="button">
-                <span class="action-icon">🧘‍♂️</span>
+                <span class="action-icon"></span>
                 <span class="action-title">Meditation</span>
                 <span class="action-subtitle">Guided timer with bells</span>
               </button>
               <button id="btn-vitals" class="action-card is-disabled" type="button" disabled>
-                <span class="action-icon">🩺</span>
+                <span class="action-icon"></span>
                 <span class="action-title">Vitals check</span>
                 <span class="action-subtitle">Hardware integration pending</span>
                 <span class="action-meta">Coming soon</span>

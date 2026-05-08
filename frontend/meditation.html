@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MAITRI - Meditation</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="neural-bg" class="neural-container"></div>
+  <div class="app">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-title">MAITRI</span>
+        <span class="brand-subtitle">Meditation Timer</span>
+      </div>
+      <div class="status-row">
+        <button class="ghost-button" id="toggle-theme" type="button">Light mode</button>
+        <button class="ghost-button" type="button" onclick="window.location.href='index.html'">Back to Chat</button>
+      </div>
+    </header>
+    <main class="meditation-shell">
+      <section class="panel text-center">
+        <h2>Meditation Timer</h2>
+        <p class="panel-note">Settle in. We'll sound a soft bell every 5 minutes and at the end.</p>
+        
+        <div class="meditation-timer" style="margin: 32px auto;">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="var(--panel-soft-border)" stroke-width="4"></circle>
+            <circle id="progress-circle" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="4" stroke-dasharray="282.7" stroke-dashoffset="0" data-circumference="282.7" style="transition: stroke-dashoffset 1s linear; stroke-linecap: round;"></circle>
+          </svg>
+          <div class="timer-text" id="timer-display">05:00</div>
+        </div>
+        
+        <div class="meditation-controls" style="margin-bottom: 24px;">
+          <button class="ghost-button preset-btn" data-minutes="3">3 min</button>
+          <button class="ghost-button preset-btn" data-minutes="5">5 min</button>
+          <button class="ghost-button preset-btn" data-minutes="10">10 min</button>
+          <button class="ghost-button preset-btn" data-minutes="15">15 min</button>
+          <button class="ghost-button preset-btn" data-minutes="20">20 min</button>
+        </div>
+        
+        <div class="meditation-controls">
+          <button class="primary-button" id="start-btn">Start</button>
+          <button class="ghost-button" id="pause-btn">Pause</button>
+          <button class="ghost-button" id="reset-btn">Reset</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/flow-field-background.js"></script>
+  <script>
+    const container = document.getElementById("neural-bg");
+    if (container) {
+      const readVar = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+      const buildConfig = () => ({
+        color: readVar("--neural-color") || "#e47f63",
+        trailColor: readVar("--neural-trail") || "0, 0, 0",
+        trailOpacity: 0.08,
+        particleCount: 520,
+        speed: 0.7
+      });
+      window.neuralBackground = new NeuralBackground(container, buildConfig());
+      window.updateNeuralBackground = () => {
+        if (window.neuralBackground) {
+          window.neuralBackground.setPalette(buildConfig());
+        }
+      };
+    }
+  </script>
+  <script type="module" src="js/meditation-page.js"></script>
+</body>
+</html>

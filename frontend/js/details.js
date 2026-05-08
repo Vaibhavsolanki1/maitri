@@ -1,4 +1,9 @@
-import { ENDPOINTS, getActiveUser } from "./modules/config.js";
+import { ENDPOINTS, getActiveUser, getSessionEntries } from "./modules/config.js";
+import { initTheme, bindThemeToggle } from "./modules/theme.js";
+
+const toggleTheme = document.getElementById("toggle-theme");
+initTheme(toggleTheme);
+bindThemeToggle(toggleTheme);
 
 async function loadData() {
   const userName = getActiveUser();
@@ -8,15 +13,20 @@ async function loadData() {
     const res = await fetch(`${ENDPOINTS.history}?userName=${encodeURIComponent(userName)}`);
     const data = await res.json();
     
-    // Process emotions
     const emotionsCount = {};
-    data.items.forEach(item => {
-      if (item.emotion) {
-        emotionsCount[item.emotion] = (emotionsCount[item.emotion] || 0) + 1;
-      }
-    });
+    if (data.items) {
+      data.items.forEach(item => {
+        if (item.emotion) {
+          emotionsCount[item.emotion] = (emotionsCount[item.emotion] || 0) + 1;
+        }
+      });
+    }
     
     const ctx = document.getElementById('emotionChart').getContext('2d');
+    const chartStyleColor = document.body.dataset.theme === 'dark' ? 'rgba(212, 123, 94, 0.7)' : 'rgba(228, 127, 99, 0.7)';
+    const chartStyleBorder = document.body.dataset.theme === 'dark' ? 'rgba(212, 123, 94, 1)' : 'rgba(228, 127, 99, 1)';
+    const textColor = document.body.dataset.theme === 'dark' ? '#f6ece4' : '#2a1d18';
+
     new Chart(ctx, {
       type: 'bar',
       data: {
@@ -24,8 +34,8 @@ async function loadData() {
         datasets: [{
           label: 'Emotion Frequency',
           data: Object.values(emotionsCount),
-          backgroundColor: 'rgba(228, 127, 99, 0.7)',
-          borderColor: 'rgba(228, 127, 99, 1)',
+          backgroundColor: chartStyleColor,
+          borderColor: chartStyleBorder,
           borderWidth: 1,
           borderRadius: 8
         }]
@@ -35,6 +45,10 @@ async function loadData() {
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false }
+        },
+        scales: {
+          x: { ticks: { color: textColor } },
+          y: { ticks: { color: textColor } }
         }
       }
     });
@@ -50,24 +64,59 @@ async function loadData() {
     if (data.items && data.items.length > 0) {
       data.items.forEach(item => {
         const div = document.createElement("div");
-        div.style.cssText = "border-bottom: 1px solid var(--panel-border); padding: 15px 0;";
+        div.className = "journal-card";
         
-        const strong = document.createElement("strong");
-        strong.style.cssText = "color: var(--accent); font-size: 14px;";
-        strong.textContent = new Date(item.timestamp).toLocaleString();
+        const dateSpan = document.createElement("span");
+        dateSpan.className = "tag-chip";
+        dateSpan.textContent = new Date(item.timestamp).toLocaleString();
         
         const p = document.createElement("p");
-        p.style.cssText = "margin-top: 8px;";
         p.textContent = item.report;
+        p.style.margin = "0";
+        p.style.fontSize = "14px";
         
-        div.appendChild(strong);
+        div.appendChild(dateSpan);
         div.appendChild(p);
         list.appendChild(div);
       });
     } else {
-      list.innerHTML = "<p>No reports found.</p>";
+      const p = document.createElement("p");
+      p.textContent = "No reports found.";
+      p.className = "data-empty";
+      list.appendChild(p);
     }
   } catch(e) { console.error("Reports fetch failed", e); }
+  
+  // Load Meditation Sessions
+  const medList = document.getElementById("meditation-list");
+  medList.innerHTML = "";
+  const sessions = getSessionEntries().filter(s => s.type === "meditation");
+  
+  if (sessions.length > 0) {
+    sessions.forEach(session => {
+      const div = document.createElement("div");
+      div.className = "session-card";
+      
+      const titleSpan = document.createElement("span");
+      titleSpan.style.fontWeight = "bold";
+      const minutes = Math.floor(session.duration / 60);
+      titleSpan.textContent = `${minutes} min session`;
+      
+      const dateSpan = document.createElement("span");
+      dateSpan.style.fontSize = "12px";
+      dateSpan.style.color = "var(--muted)";
+      dateSpan.textContent = new Date(session.timestamp).toLocaleString();
+      
+      div.appendChild(titleSpan);
+      div.appendChild(dateSpan);
+      medList.appendChild(div);
+    });
+  } else {
+    const p = document.createElement("p");
+    p.textContent = "No sessions found.";
+    p.className = "data-empty";
+    medList.appendChild(p);
+  }
 }
 
 loadData();

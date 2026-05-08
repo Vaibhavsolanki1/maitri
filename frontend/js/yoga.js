@@ -381,9 +381,164 @@ const yogaSession = {
   }
 };
 
+<<<<<<< HEAD
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
   yogaSession.initialize();
+=======
+async function initMoveNet() {
+  document.getElementById("status").textContent = "Loading MoveNet...";
+  detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+    modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+  });
+  document.getElementById("status").textContent = "Ready. Select a pose.";
+}
+
+function applyTheme(theme) {
+  const nextTheme = theme === "dark" ? "dark" : "light";
+  document.body.dataset.theme = nextTheme;
+  if (toggleTheme) {
+    toggleTheme.textContent = nextTheme === "dark" ? "Dark mode" : "Light mode";
+    toggleTheme.classList.toggle("is-active", nextTheme === "dark");
+  }
+  window.localStorage.setItem("maitriTheme", nextTheme);
+  if (window.updateNeuralBackground) {
+    window.updateNeuralBackground();
+  }
+}
+
+function initTheme() {
+  const stored = window.localStorage.getItem("maitriTheme");
+  if (stored) {
+    applyTheme(stored);
+    return;
+  }
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(prefersDark ? "dark" : "light");
+}
+
+function renderSteps(program) {
+  if (!poseSteps || !program) {
+    return;
+  }
+  poseSteps.innerHTML = "";
+  program.checkpoints.forEach((step) => {
+    const item = document.createElement("li");
+    item.className = "guide-step";
+    
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "step-title";
+    titleSpan.textContent = step.title;
+    
+    const detailSpan = document.createElement("span");
+    detailSpan.className = "step-detail";
+    detailSpan.textContent = step.detail;
+    
+    item.appendChild(titleSpan);
+    item.appendChild(detailSpan);
+    poseSteps.appendChild(item);
+  });
+}
+
+function updateGuideUi() {
+  if (!currentProgram) {
+    return;
+  }
+  const totalSteps = currentProgram.checkpoints.length;
+  const step = currentProgram.checkpoints[stepIndex];
+
+  if (poseStage) {
+    poseStage.textContent = `Step ${stepIndex + 1} of ${totalSteps}`;
+  }
+  if (poseProgressLabel) {
+    poseProgressLabel.textContent = step.title;
+  }
+  if (poseFeedback) {
+    poseFeedback.textContent = step.detail;
+  }
+
+  if (poseSteps) {
+    Array.from(poseSteps.children).forEach((item, index) => {
+      item.classList.toggle("is-active", index === stepIndex);
+      item.classList.toggle("is-complete", index < stepIndex);
+    });
+  }
+
+  updateTimerUi();
+}
+
+function updateTimerUi() {
+  if (!currentProgram) {
+    return;
+  }
+  const step = currentProgram.checkpoints[stepIndex];
+  const remaining = Math.max(holdRemaining, 0);
+  const progress = step.hold ? (step.hold - remaining) / step.hold : 0;
+
+  if (poseTimer) {
+    poseTimer.textContent = `${remaining}`;
+  }
+  if (poseProgressTime) {
+    poseProgressTime.textContent = `${remaining}s`;
+  }
+  if (poseProgressFill) {
+    poseProgressFill.style.width = `${Math.min(100, Math.max(0, progress * 100))}%`;
+  }
+}
+
+function stopHoldCountdown(reset = false) {
+  if (holdInterval) {
+    clearInterval(holdInterval);
+    holdInterval = null;
+  }
+  if (reset && currentProgram) {
+    holdRemaining = currentProgram.checkpoints[stepIndex].hold;
+  }
+  updateTimerUi();
+}
+
+function advanceStep() {
+  stopHoldCountdown(false);
+  stepIndex += 1;
+  if (!currentProgram || stepIndex >= currentProgram.checkpoints.length) {
+    completeSession();
+    return;
+  }
+  holdRemaining = currentProgram.checkpoints[stepIndex].hold;
+  updateGuideUi();
+}
+
+function startHoldCountdown() {
+  if (holdInterval) {
+    return;
+  }
+  holdInterval = setInterval(() => {
+    holdRemaining -= 1;
+    if (holdRemaining <= 0) {
+      holdRemaining = 0;
+      updateTimerUi();
+      advanceStep();
+      return;
+    }
+    updateTimerUi();
+  }, 1000);
+}
+
+document.querySelectorAll(".pose-card").forEach(card => {
+  card.addEventListener("click", () => {
+    if (!detector) return;
+    currentPose = card.getAttribute("data-pose");
+    currentProgram = posePrograms[currentPose] || null;
+    if (!currentProgram) {
+      return;
+    }
+    const label = currentProgram.label || card.querySelector("h3").textContent;
+    if (poseName) poseName.textContent = label;
+    if (guidePoseName) guidePoseName.textContent = label;
+    renderSteps(currentProgram);
+    startYogaSession();
+  });
+>>>>>>> 320140a65c7d178e6d7fa48316ef84f4145de262
 });
 
 // Export for global access

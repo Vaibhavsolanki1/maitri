@@ -1,8 +1,11 @@
-# MAITRI — Complete Project Documentation
+# MAITRI v2.1 — Complete Project Documentation
 
 > **M**ental health **A**I **I**nteractive **T**herapeutic **R**eal-time **I**nterface
 
 A full-stack, context-aware AI assistant designed for astronaut psychological support in isolated, high-stress environments. Developed by **Vaibhav** for the **ISRO Space Apps Challenge**.
+
+> [!NOTE]
+> This document reflects **v2.1** of the MAITRI system. For a quick-reference guide to every file in the codebase, see [FILE_REFERENCE.md](FILE_REFERENCE.md). For project status, future scope, and pitch material, see [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 ---
 
@@ -37,10 +40,15 @@ MAITRI is an AI-powered companion application that provides **real-time psycholo
 | Personalized face recognition | Labeled face descriptors from a reference photo |
 | Context-aware conversational AI | NVIDIA Nemotron LLM via OpenRouter API |
 | Voice activation & TTS | Web Speech API (wake word: "Hey MAITRI") |
-| Hand gesture control | TensorFlow.js HandPose model |
+| Hand gesture control | MediaPipe Hands for gesture-based navigation |
 | Pose detection (Yoga) | TensorFlow.js MoveNet model |
 | Emergency alerting | Twilio SMS + voice call to ground control |
 | Adaptive learning | Sentiment analysis builds a per-user personality profile |
+| Action confirmation | AI suggestions require explicit user consent before execution |
+| Multi-profile management | Profile switching, creation, and logout |
+| Custom layout editor | Drag-and-drop panel reordering in Settings |
+| Meditation timer | Configurable guided meditation sessions |
+| Premium UX system | Custom-styled dropdowns, sliders, micro-animations |
 
 ### Core Problem Solved
 
@@ -615,13 +623,15 @@ npm run dev
 
 | Area | Current State | Recommendation |
 |---|---|---|
+| Authentication | None — userName is self-reported | Implement JWT auth with login/register |
+| Tier system | Client-spoofable via `x-user-tier` header | Move tier lookup to server-side DB |
 | API Keys | Stored in `.env`, gitignored | Use a secrets manager in production |
-| CORS | Configurable via `CORS_ORIGIN` | Restrict to known frontend origin |
-| Emergency endpoint | No authentication | Add API key header or JWT auth |
+| CORS | Configurable via `CORS_ORIGIN` (defaults to `*`) | Restrict to known frontend origin |
+| CSRF | No protection | Add CSRF tokens for state-changing requests |
 | MongoDB | Connection string in `.env` | Use IAM-based authentication |
 | Twilio credentials | Plain text in `.env` | Rotate regularly, use encrypted storage |
-| Input validation | Minimal | Add request body validation (Joi/Zod) |
-| Rate limiting | Chat (30/min) + emergency (3/min) | Expand to other endpoints as needed |
+| Input validation | ✅ Zod schemas on all routes | Already implemented |
+| Rate limiting | Chat (10/day free) + emergency (3/min) | Add to report and yoga endpoints |
 | HTTPS | Not configured | Required for camera/mic in production |
 
 ---
@@ -629,21 +639,31 @@ npm run dev
 ## 14. Known Limitations & Future Scope
 
 ### Current Limitations
-1. **Simulated vitals**: HR, SpO2, temperature are demo values (no hardware yet)
-2. **Local face enrollment**: Profiles are stored in browser storage, not server-side
-3. **Yoga evaluation is heuristic**: Pose checks are simplified and should be expanded
-4. **No user authentication**: No login system yet
-5. **Audio library placeholders**: All genre cards map to `assets/ambient.mp3`
+1. **No user authentication**: Profiles are self-reported, no login system
+2. **Tier is client-spoofable**: Pro features can be unlocked by modifying the request header
+3. **Simulated vitals**: HR, SpO2, temperature are generated values (no hardware yet)
+4. **No responsive design**: Two-column grid doesn't adapt to mobile screens
+5. **Local face enrollment**: Profiles are stored in browser localStorage, not server-side
+6. **Yoga evaluation is heuristic**: Pose checks are simplified joint angle comparisons
+7. **Audio library placeholders**: All genre cards map to `assets/ambient.mp3`
+8. **No automated tests**: Zero unit, integration, or E2E test coverage
+9. **No request logging**: No Morgan/Pino for production observability
+10. **Sentiment analysis is naive**: Word-based library fails on sarcasm and non-English
 
 ### Future Enhancements
-1. **Real biometric integration**: Connect to wearable sensors (HR, SpO2, temp)
-2. **Multi-user support**: Registration, login, server-side profile storage
-3. **Advanced yoga poses**: Angle-based evaluation and adaptive routines
-4. **Offline LLM**: Run a local language model for zero-connectivity environments
-5. **Dashboard analytics**: Mood trends, report summaries, and alerts
-6. **PWA support**: Service worker + offline caching
-7. **Deployment**: HTTPS, CI/CD, and environment hardening
+1. **JWT authentication**: Secure login/register with server-side session management
+2. **Real biometric integration**: Bluetooth BLE wearable sensors for HR, SpO2, temperature
+3. **Responsive design**: Mobile-first CSS breakpoints for phone and tablet
+4. **Testing infrastructure**: Jest/Vitest unit tests, Playwright E2E, CI/CD pipeline
+5. **Offline LLM**: Local language model via ONNX/llama.cpp for zero-connectivity
+6. **Advanced yoga**: Angle-based pose scoring with adaptive difficulty
+7. **Multi-language**: Hindi, Spanish, and other language support
+8. **Content expansion**: Real audio tracks, progressive meditation programs, journaling
+9. **DevOps**: Docker Compose, structured logging, health checks, Kubernetes manifests
+10. **Security hardening**: Helmet.js, CSRF tokens, mongo-sanitize, HTTPS enforcement
+
+> For a detailed roadmap with phases and priorities, see [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 ---
 
-*Documentation generated from full codebase analysis. Project by Vaibhav for ISRO Space Apps Challenge.*
+*Documentation for MAITRI v2.1. Project by Vaibhav for ISRO Space Apps Challenge.*

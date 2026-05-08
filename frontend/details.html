@@ -2,63 +2,78 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>MAITRI - Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="MAITRI Wellness Dashboard" />
+  <title>MAITRI - Dashboard</title>
   <link rel="stylesheet" href="css/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    .details-grid { display: grid; grid-template-columns: 250px 1fr; gap: 30px; margin-top: 30px; }
-    .sidebar { background: var(--panel); padding: 20px; border-radius: var(--radius); height: fit-content; position: sticky; top: 20px; }
-    .sidebar a { display: block; padding: 12px; color: var(--text); text-decoration: none; border-radius: 8px; font-weight: 600; }
-    .sidebar a:hover { background: var(--chip-bg); color: var(--chip-text); }
-    .content-area section { background: var(--panel); padding: 30px; border-radius: var(--radius); margin-bottom: 30px; box-shadow: var(--shadow); }
-    .chart-container { height: 300px; margin-top: 20px; width: 100%; }
-    .tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 20px; }
-    .tech-card { padding: 16px; background: rgba(108, 140, 123, 0.1); border-radius: 12px; text-align: center; font-weight: bold; }
-  </style>
 </head>
 <body>
+  <div id="neural-bg" class="neural-container"></div>
   <div class="app">
     <header class="app-header">
       <div class="brand">
         <span class="brand-title">MAITRI</span>
-        <span class="brand-subtitle">Project Dashboard</span>
+        <span class="brand-subtitle">Wellness Dashboard</span>
       </div>
-      <button class="ghost-button" onclick="window.location.href='index.html'">Back to Chat</button>
+      <div class="status-row">
+        <button class="ghost-button" id="toggle-theme" type="button">Light mode</button>
+        <button class="ghost-button" onclick="window.location.href='index.html'">Back to Chat</button>
+      </div>
     </header>
-    <div class="details-grid">
-      <aside class="sidebar">
-        <a href="#stats">System Stats</a>
-        <a href="#reports">Daily Reports</a>
-        <a href="#arch">Architecture</a>
-      </aside>
-      <main class="content-area">
-        <section id="stats">
-          <h2>Emotion History</h2>
-          <div class="chart-container">
+    
+    <div class="dashboard-shell" style="margin-top: 30px;">
+      <div class="dashboard-hero">
+        <div>
+          <h2 style="margin-top:0">Your Wellness Overview</h2>
+          <p class="section-subtitle">A summary of your emotional trends and activities</p>
+        </div>
+      </div>
+      
+      <div class="dashboard-grid">
+        <section class="dashboard-section">
+          <h3 class="section-title">Emotion History</h3>
+          <p class="section-subtitle">Your detected moods over time</p>
+          <div class="chart-container" style="height: 300px; margin-top: 16px;">
             <canvas id="emotionChart"></canvas>
           </div>
         </section>
-        <section id="reports">
-          <h2>Recent Reports</h2>
-          <div id="reports-list">Loading...</div>
-        </section>
-        <section id="arch">
-          <h2>Architecture</h2>
-          <p>MAITRI relies on an offline-capable hybrid architecture utilizing a combination of local edge AI for perception, and a flexible backend layer for conversational intelligence.</p>
-          <div class="tech-grid">
-            <div class="tech-card">Express + Node.js</div>
-            <div class="tech-card">MongoDB</div>
-            <div class="tech-card">OpenRouter LLM</div>
-            <div class="tech-card">face-api.js</div>
-            <div class="tech-card">TF.js MoveNet</div>
-            <div class="tech-card">MediaPipe Hands</div>
-            <div class="tech-card">Web Speech API</div>
-            <div class="tech-card">Twilio SMS/Voice</div>
-          </div>
-        </section>
-      </main>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <section class="dashboard-section">
+            <h3 class="section-title">Recent Reports</h3>
+            <div id="reports-list" class="journal-list" style="margin-top: 16px;">Loading...</div>
+          </section>
+          
+          <section class="dashboard-section">
+            <h3 class="section-title">Meditation Sessions</h3>
+            <div id="meditation-list" class="session-list" style="margin-top: 16px;">Loading...</div>
+          </section>
+        </div>
+      </div>
     </div>
   </div>
+  
+  <script src="js/flow-field-background.js"></script>
+  <script>
+    const container = document.getElementById("neural-bg");
+    if (container) {
+      const readVar = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+      const buildConfig = () => ({
+        color: readVar("--neural-color") || "#e47f63",
+        trailColor: readVar("--neural-trail") || "0, 0, 0",
+        trailOpacity: 0.08,
+        particleCount: 520,
+        speed: 0.7
+      });
+      window.neuralBackground = new NeuralBackground(container, buildConfig());
+      window.updateNeuralBackground = () => {
+        if (window.neuralBackground) {
+          window.neuralBackground.setPalette(buildConfig());
+        }
+      };
+    }
+  </script>
   <script type="module" src="js/details.js"></script>
 </body>
 </html>

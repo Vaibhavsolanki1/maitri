@@ -303,11 +303,12 @@ export function createCameraController({
       }
       setStatus("Camera ready");
       updateMode("Live");
+      setProgress("Camera active ✓", 100);
       if (enableCamera) {
         enableCamera.textContent = "Camera enabled";
       }
       startEmotionDetection();
-      hideProgress();
+      setTimeout(hideProgress, 800);
       if (typeof onCameraState === "function") {
         onCameraState({ active: true, stream: cameraStream });
       }

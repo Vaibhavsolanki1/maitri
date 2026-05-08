@@ -27,7 +27,20 @@ self.addEventListener("fetch", (event) => {
   
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      if (response) return response;
+      
+      return fetch(event.request).then((networkResponse) => {
+        // Cache dynamically fetched assets
+        if (networkResponse && networkResponse.status === 200 && (networkResponse.type === "basic" || networkResponse.type === "cors")) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      }).catch(() => {
+        // Fallback for offline if not in cache
+      });
     })
   );
 });

@@ -259,6 +259,7 @@ Clicking "Cancel" during an active emergency now immediately stops the siren aud
 | [Docs/DEMO_SCRIPT.md](Docs/DEMO_SCRIPT.md) | Demo walkthrough script |
 | [Docs/FILE_REFERENCE.md](Docs/FILE_REFERENCE.md) | Every file explained |
 | [Docs/PROJECT_STATUS.md](Docs/PROJECT_STATUS.md) | Status, future scope & pitch |
+| [Docs/SCALING_AND_VISION.md](Docs/SCALING_AND_VISION.md) | Scaling strategy & vision ideas |
 
 ---
 

@@ -114,7 +114,9 @@ export function createChatController({
 
   function scrollToBottom() {
     if (chatMessages) {
-      chatMessages.scrollTop = chatMessages.scrollHeight;
+      requestAnimationFrame(() => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
     }
   }
 
@@ -324,7 +326,8 @@ export function createChatController({
         return;
       }
 
-      items.forEach((item) => {
+      // Reverse the items so the latest message is at the bottom
+      [...items].reverse().forEach((item) => {
         const role = item.role === "assistant" ? "system" : item.role || "system";
         const { message } = createMessageElement({
           text: item.content || "",

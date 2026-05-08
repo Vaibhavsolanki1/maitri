@@ -1,647 +1,546 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-<<<<<<< HEAD
-  <title>MAITRI - AI Yoga Trainer</title>
-=======
-  <meta name="description" content="MAITRI Yoga Flow" />
-  <title>MAITRI - Yoga Flow</title>
->>>>>>> 320140a65c7d178e6d7fa48316ef84f4145de262
+  <meta name="description" content="MAITRI Yoga Flow — AI-powered guided pose training" />
+  <title>MAITRI — Yoga Flow</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    /* YOGA-SPECIFIC OVERRIDES - USE MAITRI PALETTE */
+    /* ─── YOGA PAGE OVERRIDES ───────────────────────────────────────── */
     :root {
-      --yoga-primary: #e47f63;
-      --yoga-secondary: #6c8c7b;
-      --yoga-tertiary: #e9b478;
+      --yoga-accent:   #e47f63;
+      --yoga-green:    #6c8c7b;
+      --yoga-amber:    #e9b478;
     }
-
     body[data-theme="dark"] {
-      --yoga-primary: #d47b5e;
-      --yoga-secondary: #7ba28d;
-      --yoga-tertiary: #e0b07b;
+      --yoga-accent:   #d47b5e;
+      --yoga-green:    #7ba28d;
+      --yoga-amber:    #e0b07b;
     }
 
-    /* Light mode background */
-    body[data-theme="light"] {
-      background: #ffffff !important;
-    }
-
-    body[data-theme="light"] #yoga-bg {
-      background: #ffffff !important;
-    }
-
-    /* Dark mode background */
-    body[data-theme="dark"] {
-      background: #000000 !important;
-    }
-
-    body[data-theme="dark"] #yoga-bg {
-      background: #000000 !important;
-    }
-
-    #yoga-bg {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-    }
-
-    .yoga-app {
+    /* Full-page wrapper — mirrors .app from dashboard */
+    .yoga-page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px 40px;
       position: relative;
+      isolation: isolate;
       z-index: 1;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
     }
 
+    /* ── Header ─────────────────────────────────────────────────────── */
     .yoga-header {
-      background: var(--panel);
-      border-bottom: 1px solid var(--panel-border);
-      padding: 1.5rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: var(--shadow-soft);
+      gap: 16px;
+      margin-bottom: 32px;
     }
 
     .yoga-brand {
       display: flex;
-      align-items: center;
-      gap: 1rem;
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: var(--yoga-primary);
-      font-family: "Fraunces", serif;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .yoga-brand:hover .brand-title { color: var(--yoga-accent); }
+    .yoga-brand .brand-title {
+      font-family: "Fraunces", "Georgia", serif;
+      font-size: 32px;
+      letter-spacing: 0.6px;
+      color: var(--text);
+      transition: color 0.2s ease;
+    }
+    .yoga-brand .brand-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
     }
 
     .yoga-nav {
       display: flex;
-      gap: 1rem;
       align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
-    .status-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.6rem 1rem;
-      background: var(--chip-bg);
-      border: 1px solid var(--panel-border);
-      border-radius: 20px;
-      font-size: 0.9rem;
-      color: var(--chip-text);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    /* ── Hero ────────────────────────────────────────────────────────── */
+    .yoga-hero {
+      text-align: center;
+      padding: 2rem 0 3rem;
     }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--yoga-secondary);
-      animation: pulse 2s infinite;
+    .yoga-hero h1 {
+      font-family: "Fraunces", serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 0.75rem;
+      letter-spacing: -0.5px;
     }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .yoga-container {
-      flex: 1;
-      padding: 2rem;
-      max-width: 1400px;
+    .yoga-hero h1 span { color: var(--yoga-accent); }
+    .yoga-hero p {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 500px;
       margin: 0 auto;
-      width: 100%;
-      position: relative;
-      z-index: 1;
+      line-height: 1.7;
     }
 
-    .pose-categories {
+    /* ── Pose Category Columns ──────────────────────────────────────── */
+    .pose-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 2rem;
-      margin-bottom: 3rem;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      align-items: start;
     }
+    @media (max-width: 900px) { .pose-grid { grid-template-columns: 1fr; } }
 
-    .category-section {
-      background: var(--yoga-primary);
-      color: #1b1714;
+    /* ── Category Panel — matches .panel from dashboard ─────────────── */
+    .pose-panel {
+      background: var(--panel);
       border: 1px solid var(--panel-border);
       border-radius: var(--radius);
-      padding: 2rem;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
-      box-shadow: var(--shadow-soft);
-    }
-
-    .category-section:hover {
-      border-color: var(--yoga-primary);
-      box-shadow: var(--shadow-soft-md);
-      transform: translateY(-2px);
-    }
-
-    .category-title {
-      font-size: 1.3rem;
-      font-weight: bold;
-      margin-bottom: 1rem;
-      color: #1b1714;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.7s ease both;
       display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .pose-panel:nth-child(2) { animation-delay: 0.1s; }
+    .pose-panel:nth-child(3) { animation-delay: 0.2s; }
+
+    .pose-panel-header {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 0.5rem;
+      margin-bottom: 16px;
+    }
+    .pose-panel-header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
     }
 
+    /* ── Pose Rows ───────────────────────────────────────────────────── */
     .pose-list {
       list-style: none;
       padding: 0;
       margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    .pose-item {
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--panel-soft-border);
-    }
-
-    .pose-item:last-child {
-      border-bottom: none;
-    }
-
-    .pose-button {
-      background: none;
-      border: none;
-      padding: 0.75rem 0;
-      width: 100%;
-      text-align: left;
-      color: var(--yoga-secondary);
+    .pose-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 11px 14px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: 1rem;
-      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      background: transparent;
+      text-align: left;
+      width: 100%;
+      color: var(--text);
+      font-family: inherit;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
       position: relative;
-      font-family: "Manrope", sans-serif;
+    }
+    .pose-row:hover {
+      background: var(--action-card-bg);
+      border-color: rgba(228, 127, 99, 0.22);
+      transform: translateX(4px);
+      box-shadow: var(--shadow-soft);
     }
 
-    .pose-button:hover {
-      color: var(--yoga-primary);
-      transform: translateX(5px);
+    /* Icon box — matches .action-icon */
+    .pose-icon {
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--action-icon-bg);
+      display: grid;
+      place-items: center;
+    }
+    .pose-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--yoga-accent);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
-    .pose-button::before {
-      content: '';
-      position: absolute;
-      left: -10px;
-      width: 3px;
-      height: 100%;
-      background: var(--yoga-primary);
+    .pose-info { flex: 1; min-width: 0; }
+    .pose-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pose-sanskrit {
+      font-size: 11px;
+      color: var(--muted);
+      display: block;
+      margin-top: 2px;
+      font-style: italic;
+    }
+
+    .pose-arrow {
+      flex-shrink: 0;
+      color: var(--muted);
       opacity: 0;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .pose-row:hover .pose-arrow { opacity: 1; transform: translateX(3px); }
+    .pose-arrow svg {
+      width: 16px; height: 16px;
+      stroke: var(--yoga-accent);
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
-    .pose-button:hover::before {
-      opacity: 1;
-    }
-
-    /* SESSION OVERLAY */
-    .yoga-session-overlay {
+    /* ── Session Overlay ─────────────────────────────────────────────── */
+    .session-overlay {
       display: none;
       position: fixed;
       inset: 0;
       background: radial-gradient(circle at top, var(--bg-spot) 0%, var(--bg) 45%, var(--bg-2) 100%);
       z-index: 1000;
       flex-direction: column;
-      backdrop-filter: blur(2px);
     }
+    .session-overlay.active { display: flex; }
 
-    .yoga-session-overlay.active {
-      display: flex;
-    }
-
-    .session-layout {
+    .session-inner {
+      flex: 1;
       display: grid;
       grid-template-columns: 1fr 300px;
-      gap: 1.5rem;
-      flex: 1;
-      padding: 1.5rem;
+      gap: 20px;
+      padding: 20px;
       height: 100%;
+      min-height: 0;
+    }
+    @media (max-width: 900px) {
+      .session-inner { grid-template-columns: 1fr; }
     }
 
-    .session-video-area {
+    /* Video area */
+    .session-video-wrap {
       position: relative;
       background: var(--panel);
       border-radius: var(--radius);
       overflow: hidden;
-      border: 2px solid var(--yoga-primary);
+      border: 1px solid var(--panel-border);
+      box-shadow: var(--shadow-strong);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: var(--shadow-strong);
     }
-
     #yoga-video {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       object-fit: cover;
       transform: scaleX(-1);
     }
-
-    #yoga-canvas {
+    #yoga-canvas, #ghost-canvas {
       position: absolute;
       inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
+      width: 100%; height: 100%;
       pointer-events: none;
     }
+    #yoga-canvas  { z-index: 2; }
+    #ghost-canvas { z-index: 3; }
 
-    #ghost-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 3;
-      pointer-events: none;
-    }
-
+    /* HUD elements */
     .session-hud {
       position: absolute;
       inset: 0;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 2rem;
+      padding: 20px;
       pointer-events: none;
+      z-index: 4;
     }
-
-    .hud-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-
+    .hud-top { display: flex; justify-content: space-between; align-items: flex-start; }
     .hud-pose-name {
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: var(--yoga-primary);
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       font-family: "Fraunces", serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--yoga-accent);
+      text-shadow: 0 2px 12px rgba(0,0,0,0.25);
     }
-
     .hud-accuracy {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
     }
-
     .accuracy-circle {
-      width: 120px;
-      height: 120px;
+      width: 110px; height: 110px;
       border-radius: 50%;
-      border: 3px solid var(--yoga-secondary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      font-weight: bold;
-      position: relative;
+      border: 3px solid var(--yoga-green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; font-weight: 700;
       background: var(--panel);
       box-shadow: var(--shadow-pill);
+      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+      font-family: "Fraunces", serif;
     }
-
     .accuracy-circle.high {
-      border-color: var(--yoga-primary);
+      border-color: var(--yoga-accent);
       background: rgba(228, 127, 99, 0.1);
-      box-shadow: 0 0 20px rgba(228, 127, 99, 0.2);
+      box-shadow: 0 0 24px rgba(228, 127, 99, 0.3);
     }
-
     .accuracy-label {
-      font-size: 0.8rem;
-      color: var(--yoga-secondary);
+      font-size: 0.75rem;
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-
-    .hud-feedback {
-      position: absolute;
-      bottom: 2rem;
-      left: 2rem;
-      right: 2rem;
-      background: rgba(255, 255, 255, 0.95);
-      border: 2px solid var(--yoga-tertiary);
+    .hud-feedback-bar {
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(8px);
       border-radius: var(--radius-sm);
-      padding: 1rem;
-      font-size: 1.1rem;
-      color: var(--text);
+      padding: 12px 18px;
+      font-size: 1rem;
+      color: #fff;
       text-align: center;
-      animation: slideUp 0.3s ease;
-      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255,255,255,0.12);
+      transition: border-color 0.3s;
     }
+    .hud-feedback-bar.success { border-color: rgba(100, 220, 130, 0.5); }
+    .hud-feedback-bar.warning { border-color: rgba(228, 127, 99, 0.5); }
 
-    .hud-feedback.success {
-      border-color: var(--yoga-primary);
-      background: rgba(228, 127, 99, 0.1);
-    }
-
-    .hud-feedback.warning {
-      border-color: var(--yoga-tertiary);
-      background: rgba(233, 180, 120, 0.1);
-    }
-
-    @keyframes slideUp {
-      from {
-        transform: translateY(20px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-
-    /* SIDE PANEL */
+    /* Side Panel */
     .session-panel {
       background: var(--panel);
       border: 1px solid var(--panel-border);
       border-radius: var(--radius);
-      padding: 1.5rem;
+      padding: 22px;
+      box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 16px;
       overflow-y: auto;
-      max-height: calc(100vh - 100px);
-      box-shadow: var(--shadow-soft-md);
     }
-
-    .panel-section {
-      border-bottom: 1px solid var(--panel-soft-border);
-      padding-bottom: 1rem;
-    }
-
-    .panel-section:last-child {
-      border-bottom: none;
-    }
-
-    .panel-label {
-      font-size: 0.75rem;
+    .sp-label {
+      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--yoga-secondary);
-      margin-bottom: 0.5rem;
-    }
-
-    .panel-title {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: var(--yoga-primary);
-      font-family: "Fraunces", serif;
-    }
-
-    .instruction-list {
-      list-style: none;
-      padding: 0;
-      margin: 0.5rem 0 0 0;
-    }
-
-    .instruction-item {
-      padding: 0.5rem 0;
-      font-size: 0.9rem;
+      letter-spacing: 1.2px;
       color: var(--muted);
-      position: relative;
-      padding-left: 1rem;
-      transition: all 0.2s ease;
+      margin-bottom: 4px;
     }
-
-    .instruction-item::before {
-      content: '→';
-      position: absolute;
-      left: 0;
-      color: var(--yoga-secondary);
-    }
-
-    .instruction-item.active {
-      color: var(--yoga-primary);
-      background: rgba(228, 127, 99, 0.08);
-      padding: 0.5rem;
-      border-radius: 6px;
-      padding-left: 1rem;
-    }
-
-    .timer-display {
-      text-align: center;
-      font-size: 2rem;
-      font-weight: bold;
-      color: var(--yoga-primary);
-      margin: 0.5rem 0;
+    .sp-title {
       font-family: "Fraunces", serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--yoga-accent);
     }
-
-    .progress-ring {
-      width: 80px;
-      height: 80px;
-      margin: 1rem auto;
+    .sp-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
     }
+    .sp-sep { border: none; border-top: 1px solid var(--panel-border); margin: 0; }
 
-    .progress-ring-circle {
-      transition: stroke-dashoffset 0.35s;
-      transform: rotate(-90deg);
-      transform-origin: 50% 50%;
-      stroke: var(--yoga-primary);
-      fill: transparent;
-      stroke-width: 4;
-      stroke-dasharray: 251.2;
+    /* Step list */
+    .step-list {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 6px;
     }
-
-    .button-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-top: auto;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--yoga-primary), var(--yoga-secondary));
-      border: none;
-      color: #fff;
-      padding: 0.75rem;
-      border-radius: var(--radius-sm);
-      font-weight: bold;
-      cursor: pointer;
+    .step-item {
+      font-size: 0.88rem;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid transparent;
       transition: all 0.2s ease;
-      text-transform: uppercase;
-      font-size: 0.9rem;
-      letter-spacing: 0.5px;
+      position: relative;
+      padding-left: 24px;
+    }
+    .step-item::before {
+      content: '';
+      position: absolute;
+      left: 10px; top: 50%;
+      transform: translateY(-50%);
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.2s;
+    }
+    .step-item.active {
+      color: var(--text);
+      background: rgba(228, 127, 99, 0.08);
+      border-color: rgba(228, 127, 99, 0.2);
+    }
+    .step-item.active::before { background: var(--yoga-accent); }
+    .step-item.done { text-decoration: line-through; opacity: 0.5; }
+    .step-item.done::before { background: var(--yoga-green); }
+
+    /* Hold timer */
+    .hold-wrap {
+      display: flex; align-items: center; gap: 16px;
+    }
+    .hold-timer {
+      font-family: "Fraunces", serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--yoga-accent);
+      min-width: 64px;
+      text-align: center;
+    }
+    .hold-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--panel-soft-border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .hold-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--yoga-green), var(--yoga-accent));
+      border-radius: 99px;
+      transition: width 0.8s linear;
     }
 
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-pill);
-    }
-
-    .btn-secondary {
-      background: var(--ghost-bg);
-      border: 2px solid var(--yoga-secondary);
-      color: var(--yoga-secondary);
-      padding: 0.75rem;
-      border-radius: var(--radius-sm);
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-transform: uppercase;
-      font-size: 0.9rem;
-      letter-spacing: 0.5px;
-    }
-
-    .btn-secondary:hover {
-      border-color: var(--yoga-primary);
-      color: var(--yoga-primary);
-      background: rgba(228, 127, 99, 0.1);
-    }
-
-    /* RESPONSIVE */
-    @media (max-width: 1024px) {
-      .session-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .session-panel {
-        max-height: 250px;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .yoga-header {
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .yoga-container {
-        padding: 1rem;
-      }
-
-      .accuracy-circle {
-        width: 80px;
-        height: 80px;
-        font-size: 1.5rem;
-      }
-
-      .hud-pose-name {
-        font-size: 1.3rem;
-      }
-
-      .session-layout {
-        gap: 0.5rem;
-        padding: 0.5rem;
-      }
-    }
+    /* Buttons in session panel */
+    .sp-actions { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
   </style>
-  <script src="node_modules/@mediapipe/camera_utils/camera_utils.js"></script>
-  <script src="node_modules/@mediapipe/drawing_utils/drawing_utils.js"></script>
-  <script src="node_modules/@mediapipe/pose/pose.js"></script>
 </head>
-<body data-theme="light">
-  <div id="yoga-bg" class="neural-bg"></div>
-  <div class="yoga-app">
+<body>
+  <!-- Neural background — identical to dashboard -->
+  <div id="neural-bg" class="neural-container"></div>
+
+  <div class="yoga-page">
+    <!-- Header — matches app-header exactly -->
     <header class="yoga-header">
-      <div class="yoga-brand">
-        🧘 MAITRI Yoga AI
-      </div>
+      <a class="yoga-brand" href="index.html" id="yoga-brand-link" title="Back to MAITRI Dashboard">
+        <span class="brand-title">MAITRI</span>
+        <span class="brand-subtitle">Yoga Flow</span>
+      </a>
       <div class="yoga-nav">
-        <div class="status-indicator">
-          <span class="status-dot"></span>
-          <span id="status-text">Initializing...</span>
-        </div>
-        <button class="btn-secondary" id="toggle-theme" title="Toggle dark mode">Light mode</button>
-        <button class="btn-secondary" onclick="window.location.href='index.html'">Back</button>
+        <div class="status-chip" id="status-text">Initializing MoveNet…</div>
+        <button class="ghost-button" id="toggle-theme" type="button">Light mode</button>
+        <button class="ghost-button" type="button" onclick="window.location.href='index.html'">← Dashboard</button>
       </div>
     </header>
 
-    <main class="yoga-container" id="main-content">
-      <div id="pose-selection" style="display: block;">
-        <h1 style="color: var(--yoga-primary); text-align: center; margin-bottom: 2rem; font-size: 2.5rem; font-family: 'Fraunces', serif;">
-          AI-Powered Yoga Training
-        </h1>
-        <p style="text-align: center; color: var(--yoga-secondary); margin-bottom: 3rem; font-size: 1.1rem; font-family: 'Manrope', sans-serif;">
-          Select a pose and let the AI guide you. Real-time posture correction powered by MediaPipe.
-        </p>
+    <!-- Hero -->
+    <section class="yoga-hero">
+      <h1>AI-Guided <span>Yoga Training</span></h1>
+      <p>Select a pose. Align with the ghost outline. Hold to advance through each step — powered by MoveNet Thunder.</p>
+    </section>
 
-        <div class="pose-categories" id="pose-grid"></div>
-      </div>
-    </main>
+    <!-- Pose grid — 3 columns, one per difficulty -->
+    <div class="pose-grid" id="pose-grid">
+      <!-- Dynamically populated by yoga.js -->
+    </div>
   </div>
 
-  <!-- SESSION OVERLAY -->
-  <div class="yoga-session-overlay" id="session-overlay">
-    <div style="flex: 1; padding: 1rem; display: flex;">
-      <div class="session-layout">
-        <div class="session-video-area">
-          <video id="yoga-video" autoplay playsinline muted></video>
-          <canvas id="yoga-canvas"></canvas>
-          <canvas id="ghost-canvas"></canvas>
-          <div class="session-hud">
-            <div class="hud-top">
-              <div class="hud-pose-name" id="hud-pose-name">Mountain Pose</div>
-              <div class="hud-accuracy">
-                <div class="accuracy-circle" id="accuracy-circle">
-                  <span id="accuracy-percent">0%</span>
-                </div>
-                <div class="accuracy-label">Match</div>
+  <!-- ═══ SESSION OVERLAY ═══════════════════════════════════════════ -->
+  <div class="session-overlay" id="session-overlay">
+    <!-- Session header strip -->
+    <header class="yoga-header" style="padding: 12px 20px; margin-bottom: 0; border-bottom: 1px solid var(--panel-border); background: var(--panel);">
+      <a class="yoga-brand" href="index.html" style="gap: 4px;">
+        <span class="brand-title" style="font-size: 22px;">MAITRI</span>
+        <span class="brand-subtitle" style="font-size: 11px;">Yoga Flow</span>
+      </a>
+      <div class="yoga-nav">
+        <div class="status-chip" id="session-status-text">Session active</div>
+      </div>
+    </header>
+
+    <div class="session-inner">
+      <!-- Video / canvas area -->
+      <div class="session-video-wrap">
+        <video id="yoga-video" autoplay playsinline muted></video>
+        <canvas id="yoga-canvas"></canvas>
+        <canvas id="ghost-canvas"></canvas>
+
+        <div class="session-hud">
+          <div class="hud-top">
+            <div class="hud-pose-name" id="hud-pose-name">—</div>
+            <div class="hud-accuracy">
+              <div class="accuracy-circle" id="accuracy-circle">
+                <span id="accuracy-percent">0%</span>
               </div>
+              <div class="accuracy-label">Match</div>
             </div>
           </div>
-          <div class="hud-feedback" id="hud-feedback" style="display: none;"></div>
+          <div class="hud-feedback-bar" id="hud-feedback" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Side panel -->
+      <div class="session-panel">
+        <div>
+          <div class="sp-label">Current Step</div>
+          <div class="sp-title" id="step-title">Step 1</div>
+          <div class="sp-desc" id="step-description"></div>
         </div>
 
-        <div class="session-panel">
-          <div class="panel-section">
-            <div class="panel-label">Current Step</div>
-            <div class="panel-title" id="step-title">Step 1</div>
-            <p id="step-description" style="font-size: 0.9rem; color: var(--neon-secondary); margin-top: 0.5rem;"></p>
-          </div>
+        <hr class="sp-sep" />
 
-          <div class="panel-section">
-            <div class="panel-label">Instructions</div>
-            <ol class="instruction-list" id="instruction-list"></ol>
-          </div>
+        <div>
+          <div class="sp-label">Progress</div>
+          <ol class="step-list" id="instruction-list"></ol>
+        </div>
 
-          <div class="panel-section">
-            <div class="panel-label">Hold Progress</div>
-            <div class="timer-display" id="timer-display">0s</div>
-            <svg class="progress-ring" viewBox="0 0 100 100">
-              <circle class="progress-ring-circle" stroke-dashoffset="0" r="40" cx="50" cy="50" />
-            </svg>
-          </div>
+        <hr class="sp-sep" />
 
-          <div class="button-group">
-            <button class="btn-primary" id="next-step-btn" onclick="yogaSession.nextStep()">Next Step</button>
-            <button class="btn-secondary" onclick="yogaSession.endSession()">End Session</button>
+        <div>
+          <div class="sp-label">Hold Timer</div>
+          <div class="hold-wrap">
+            <div class="hold-timer" id="timer-display">—</div>
+            <div class="hold-bar-track">
+              <div class="hold-bar-fill" id="hold-bar-fill"></div>
+            </div>
           </div>
+        </div>
+
+        <div class="sp-actions">
+          <button class="primary-button" id="next-step-btn" onclick="yogaSession.nextStep()">Skip Step</button>
+          <button class="ghost-button" onclick="yogaSession.endSession()">End Session</button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Neural background init — same script as index.html -->
   <script src="js/flow-field-background.js"></script>
-  <script type="module" src="js/yoga.js"></script>
-  
   <script>
-    // Initialize neural background when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-      const yogaBg = document.getElementById('yoga-bg');
-      if (yogaBg && typeof NeuralBackground !== 'undefined') {
-        // Use orange for animation in both light and dark modes
-        new NeuralBackground(yogaBg, {
-          color: '#ff8c42',
-          trailColor: '#000000',
-          trailOpacity: 0.4,
-          particleCount: 50,
-          speed: 2
-        });
-      }
-    });
+    const yogaBgEl = document.getElementById("neural-bg");
+    if (yogaBgEl) {
+      const readVar = name => getComputedStyle(document.body).getPropertyValue(name).trim();
+      const buildConfig = () => ({
+        color: readVar("--neural-color") || "#e47f63",
+        trailColor: readVar("--neural-trail") || "246,239,232",
+        trailOpacity: 0.08,
+        particleCount: 520,
+        speed: 0.7
+      });
+      window.neuralBackground = new NeuralBackground(yogaBgEl, buildConfig());
+      window.updateNeuralBackground = () => {
+        if (window.neuralBackground) window.neuralBackground.setPalette(buildConfig());
+      };
+    }
   </script>
+
+  <!-- TensorFlow / MoveNet -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+  <!-- Yoga controller (module) -->
+  <script type="module" src="js/yoga.js"></script>
 </body>
 </html>

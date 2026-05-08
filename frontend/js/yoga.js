@@ -1,18 +1,48 @@
 /**
- * MAITRI AI Yoga Trainer
- * Main controller for the yoga session
- * Built with vanilla JS and MediaPipe Pose Detection
+ * MAITRI — Yoga Flow controller
+ * Powered by MoveNet Thunder · Premium redesign
  */
 
 import poseLibrary from "./modules/yoga-poses.js";
 import YogaPoseDetector from "./modules/yoga-detector.js";
 import { initTheme, bindThemeToggle } from "./modules/theme.js";
 
-// Global session state
+// ── Inline SVG icon set (no emojis) ────────────────────────────────────────
+const ICONS = {
+  // Standing / balance
+  mountain: `<svg viewBox="0 0 24 24"><polyline points="2 20 8 6 14 14 18 8 22 20"/></svg>`,
+  tree:     `<svg viewBox="0 0 24 24"><line x1="12" y1="22" x2="12" y2="12"/><path d="M5 12l7-10 7 10"/><path d="M3 17l9-5 9 5"/></svg>`,
+  child:    `<svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4"/><path d="M7 22V12l-2-4h14l-2 4v10"/></svg>`,
+  cobra:    `<svg viewBox="0 0 24 24"><path d="M3 18c0-4 3-7 9-7s9 3 9 7"/><path d="M15 11c0-2-1.5-4-3-4s-3 2-3 4"/></svg>`,
+  catcow:   `<svg viewBox="0 0 24 24"><path d="M4 12c0-4 3-6 8-6s8 2 8 6"/><path d="M4 12c0 4 3 6 8 6s8-2 8-6"/></svg>`,
+  warrior1: `<svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="8"/><path d="M6 22l6-14 6 14"/><line x1="4" y1="8" x2="20" y2="8"/></svg>`,
+  warrior2: `<svg viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12"/><path d="M9 5l-4 7 4 7"/><path d="M15 5l4 7-4 7"/></svg>`,
+  triangle: `<svg viewBox="0 0 24 24"><polygon points="12 2 22 20 2 20"/></svg>`,
+  bridge:   `<svg viewBox="0 0 24 24"><path d="M3 17c3-8 15-8 18 0"/><line x1="3" y1="17" x2="21" y2="17"/></svg>`,
+  boat:     `<svg viewBox="0 0 24 24"><path d="M2 20h20"/><path d="M5 20L3 10l9 4 9-4-2 10"/></svg>`,
+  crow:     `<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M6 12l6-5 6 5"/><path d="M8 20l4-8 4 8"/></svg>`,
+  headstand:`<svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><line x1="12" y1="6" x2="12" y2="14"/><line x1="6" y1="14" x2="18" y2="14"/><line x1="6" y1="14" x2="6" y2="22"/><line x1="18" y1="14" x2="18" y2="22"/></svg>`,
+  wheel:    `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>`,
+  sideplank:`<svg viewBox="0 0 24 24"><line x1="2" y1="18" x2="22" y2="6"/><line x1="12" y1="3" x2="12" y2="12"/></svg>`,
+  kingpigeon:`<svg viewBox="0 0 24 24"><path d="M4 20c2-8 14-12 16-4"/><path d="M12 4c0 4-4 8-4 12"/><circle cx="16" cy="6" r="2"/></svg>`,
+  default:  `<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="M9 10l3 2 3-2"/><line x1="9" y1="22" x2="12" y2="15"/><line x1="15" y1="22" x2="12" y2="15"/></svg>`
+};
+
+function getPoseIcon(id) {
+  return ICONS[id] || ICONS.default;
+}
+
+// ── Difficulty metadata ─────────────────────────────────────────────────────
+const DIFF_META = {
+  beginner:     { label: "Beginner",     tag: "Foundation" },
+  intermediate: { label: "Intermediate", tag: "Strength" },
+  advanced:     { label: "Advanced",     tag: "Mastery" }
+};
+
+// ── Session state ───────────────────────────────────────────────────────────
 const yogaSession = {
   currentPose: null,
   currentStep: 0,
-  sessionId: null,
   startTime: null,
   stepStartTime: null,
   detector: null,
@@ -21,87 +51,88 @@ const yogaSession = {
   holdDuration: 0,
   lastLandmarks: null,
   targetLandmarks: null,
-  sessionData: [],
-  userName: "Guest",
 
   async initialize() {
-    const statusText = document.getElementById("status-text");
+    const statusEl = document.getElementById("status-text");
     const themeToggle = document.getElementById("toggle-theme");
-    
+
     try {
-      statusText.textContent = "Initializing pose detector...";
+      statusEl.textContent = "Loading MoveNet Thunder…";
       this.detector = new YogaPoseDetector();
       await this.detector.initialize();
-      statusText.textContent = "✓ Ready to train";
-      
-      // Initialize theme
+      statusEl.textContent = "✓ Ready to train";
+
       initTheme(themeToggle);
       bindThemeToggle(themeToggle);
-      
+
       this.setupEventListeners();
-      this.loadPoseCategories();
-    } catch (error) {
-      console.error("Initialization failed:", error);
-      statusText.textContent = "⚠ Failed to initialize";
+      this.renderPoseGrid();
+    } catch (err) {
+      console.error("Init failed:", err);
+      statusEl.textContent = "⚠ Failed to initialise";
     }
   },
 
   setupEventListeners() {
-    document.addEventListener("click", (e) => {
-      if (e.target.classList.contains("pose-button")) {
-        const poseId = e.target.dataset.poseId;
-        this.startSession(poseId);
-      }
+    document.addEventListener("click", e => {
+      const row = e.target.closest(".pose-row");
+      if (row) this.startSession(row.dataset.poseId);
     });
   },
 
-  loadPoseCategories() {
+  renderPoseGrid() {
     const grid = document.getElementById("pose-grid");
     grid.innerHTML = "";
 
-    const categorized = poseLibrary.getCategorized();
+    const categorised = poseLibrary.getCategorized();
+    let delay = 0;
 
-    Object.entries(categorized).forEach(([difficulty, poses]) => {
-      const section = document.createElement("div");
-      section.className = "category-section";
+    Object.entries(categorised).forEach(([diff, poses]) => {
+      const meta = DIFF_META[diff] || { label: diff, tag: "" };
 
-      const title = document.createElement("h2");
-      title.className = "category-title";
-      title.style.fontFamily = "'Fraunces', serif";
-      title.innerHTML = `${this.getDifficultyEmoji(difficulty)} ${this.formatDifficulty(difficulty)} Level`;
+      const panel = document.createElement("div");
+      panel.className = "pose-panel";
+      panel.style.animationDelay = `${delay}s`;
+      delay += 0.1;
 
+      // Panel header
+      const header = document.createElement("div");
+      header.className = "pose-panel-header";
+      header.innerHTML = `
+        <h2>${meta.label}</h2>
+        <span class="panel-tag">${meta.tag}</span>
+      `;
+      panel.appendChild(header);
+
+      // Pose list
       const list = document.createElement("ul");
       list.className = "pose-list";
 
       poses.forEach(pose => {
-        const item = document.createElement("li");
-        item.className = "pose-item";
-
-        const button = document.createElement("button");
-        button.className = "pose-button";
-        button.style.fontFamily = "'Manrope', sans-serif";
-        button.dataset.poseId = pose.id;
-        button.textContent = `${pose.emoji} ${pose.name}`;
-
-        item.appendChild(button);
-        list.appendChild(item);
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.className = "pose-row";
+        btn.dataset.poseId = pose.id;
+        btn.innerHTML = `
+          <span class="pose-icon">${getPoseIcon(pose.id)}</span>
+          <span class="pose-info">
+            <span class="pose-name">${pose.name}</span>
+            <span class="pose-sanskrit">${pose.sanskrit}</span>
+          </span>
+          <span class="pose-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </span>
+        `;
+        li.appendChild(btn);
+        list.appendChild(li);
       });
 
-      section.appendChild(title);
-      section.appendChild(list);
-      grid.appendChild(section);
+      panel.appendChild(list);
+      grid.appendChild(panel);
     });
   },
 
-  formatDifficulty(diff) {
-    return diff.charAt(0).toUpperCase() + diff.slice(1);
-  },
-
-  getDifficultyEmoji(difficulty) {
-    const emojis = { beginner: "🌱", intermediate: "🔥", advanced: "⭐" };
-    return emojis[difficulty] || "🧘";
-  },
-
+  // ── Session start ───────────────────────────────────────────────────
   async startSession(poseId) {
     const pose = poseLibrary.getPoseById(poseId);
     if (!pose) return;
@@ -109,42 +140,30 @@ const yogaSession = {
     this.currentPose = pose;
     this.currentStep = 0;
     this.startTime = Date.now();
-    this.sessionData = [];
     this.isSessionActive = true;
 
-    // Show session overlay immediately
     document.getElementById("session-overlay").classList.add("active");
-    document.getElementById("main-content").style.display = "none";
-    
-    // Show loading state
-    const statusText = document.getElementById("status-text");
-    statusText.textContent = "📹 Accessing camera...";
 
-    // Request camera access
     const video = document.getElementById("yoga-video");
     const ok = await this.detector.startCamera(video);
     if (!ok) {
-      alert("Camera access denied");
+      alert("Camera access denied — please allow camera access and try again.");
       this.closeSession();
       return;
     }
 
-    statusText.textContent = "⏳ Initializing pose detection...";
-
-    // Wait for video to load
+    // Wait for video metadata
     await new Promise(resolve => {
+      if (video.readyState >= 1) { resolve(); return; }
       video.onloadedmetadata = () => resolve();
     });
 
-    statusText.textContent = "✓ Ready to train";
-
-    // Start detection loop
-    this.startDetectionLoop();
-
-    // Render UI
+    document.getElementById("session-status-text").textContent = `${pose.name} · Active`;
     this.renderStep();
+    this.startDetectionLoop();
   },
 
+  // ── Render current step ─────────────────────────────────────────────
   renderStep() {
     if (!this.currentPose || this.currentStep >= this.currentPose.steps.length) {
       this.completeSession();
@@ -152,197 +171,172 @@ const yogaSession = {
     }
 
     const step = this.currentPose.steps[this.currentStep];
-    
-    const hudPoseName = document.getElementById("hud-pose-name");
-    hudPoseName.textContent = this.currentPose.name;
-    hudPoseName.style.fontFamily = "'Fraunces', serif";
-    
-    const stepTitle = document.getElementById("step-title");
-    stepTitle.textContent = `Step ${this.currentStep + 1} of ${this.currentPose.steps.length}`;
-    stepTitle.style.fontFamily = "'Fraunces', serif";
-    
-    const stepDescription = document.getElementById("step-description");
-    stepDescription.textContent = step.detail;
-    stepDescription.style.fontFamily = "'Manrope', sans-serif";
 
-    // Render instructions
-    const instructionList = document.getElementById("instruction-list");
-    instructionList.innerHTML = "";
+    document.getElementById("hud-pose-name").textContent = this.currentPose.name;
+    document.getElementById("step-title").textContent = `Step ${this.currentStep + 1} of ${this.currentPose.steps.length} — ${step.title}`;
+    document.getElementById("step-description").textContent = step.detail;
 
+    // Instruction list
+    const list = document.getElementById("instruction-list");
+    list.innerHTML = "";
     this.currentPose.steps.forEach((s, i) => {
       const li = document.createElement("li");
-      li.className = `instruction-item ${i === this.currentStep ? "active" : ""}`;
-      li.style.fontFamily = "'Manrope', sans-serif";
+      li.className = "step-item" +
+        (i === this.currentStep ? " active" : "") +
+        (i < this.currentStep ? " done" : "");
       li.textContent = s.title;
-      instructionList.appendChild(li);
+      list.appendChild(li);
     });
 
-    this.stepStartTime = Date.now();
+    // Reset hold display
+    document.getElementById("timer-display").textContent = `${step.hold}s`;
+    document.getElementById("hold-bar-fill").style.width = "0%";
+
+    this.stepStartTime = null;
     this.holdDuration = 0;
+    this.targetLandmarks = null;
   },
 
+  // ── Detection loop ──────────────────────────────────────────────────
   startDetectionLoop() {
     const video = document.getElementById("yoga-video");
     const canvas = document.getElementById("yoga-canvas");
-    const ghostCanvas = document.getElementById("ghost-canvas");
-    const accuracyCircle = document.getElementById("accuracy-circle");
-    const accuracyPercent = document.getElementById("accuracy-percent");
-    const feedback = document.getElementById("hud-feedback");
-    const timerDisplay = document.getElementById("timer-display");
-    timerDisplay.style.fontFamily = "'Fraunces', serif";
+    const ghost  = document.getElementById("ghost-canvas");
+    const circleEl  = document.getElementById("accuracy-circle");
+    const percentEl = document.getElementById("accuracy-percent");
+    const feedbackEl= document.getElementById("hud-feedback");
+    const timerEl   = document.getElementById("timer-display");
+    const barEl     = document.getElementById("hold-bar-fill");
 
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-    ghostCanvas.width = canvas.width;
-    ghostCanvas.height = canvas.height;
+    canvas.width = ghost.width = video.videoWidth  || 1280;
+    canvas.height= ghost.height= video.videoHeight || 720;
 
-    // Set fonts for accuracy display
-    if (accuracyPercent) {
-      accuracyPercent.style.fontFamily = "'Fraunces', serif";
-    }
-    if (feedback) {
-      feedback.style.fontFamily = "'Manrope', sans-serif";
-    }
-
-    const detectionLoop = async () => {
+    const loop = async () => {
       if (!this.isSessionActive) return;
 
-      const landmarks = await this.detector.detect(video);
-      
-      if (landmarks && landmarks.length > 0) {
-        // Smooth landmarks
-        if (this.lastLandmarks) {
-          this.lastLandmarks = this.detector.smoothLandmarks(landmarks, this.lastLandmarks);
-        } else {
-          this.lastLandmarks = landmarks;
-        }
+      const raw = await this.detector.detect(video);
 
-        // Draw current skeleton (clears its own canvas)
-        this.detector.drawLandmarks(canvas, this.lastLandmarks);
+      if (raw) {
+        this.lastLandmarks = this.lastLandmarks
+          ? this.detector.smoothLandmarks(raw, this.lastLandmarks)
+          : raw;
 
-        // Generate target landmarks (idealized pose)
-        if (!this.targetLandmarks) {
+        if (!this.targetLandmarks)
           this.targetLandmarks = this.generateTargetLandmarks(this.currentPose);
-        }
 
-        // Clear ghost canvas and draw ghost pose on separate canvas
-        const ghostCtx = ghostCanvas.getContext("2d");
-        ghostCtx.clearRect(0, 0, ghostCanvas.width, ghostCanvas.height);
-        this.detector.drawGhostPose(ghostCanvas, this.lastLandmarks, this.targetLandmarks);
+        // Draw
+        this.detector.drawLandmarks(canvas, this.lastLandmarks);
+        const gCtx = ghost.getContext("2d");
+        gCtx.clearRect(0, 0, ghost.width, ghost.height);
+        this.detector.drawGhostPose(ghost, this.lastLandmarks, this.targetLandmarks);
 
-        // Calculate accuracy
+        // Accuracy
         this.accuracy = this.detector.calculatePoseAccuracy(
           this.lastLandmarks,
           this.targetLandmarks,
           this.getJointIndices(this.currentPose.criticalJoints)
         );
+        percentEl.textContent = `${this.accuracy}%`;
+        circleEl.classList.toggle("high", this.accuracy >= 80);
 
-        // Update accuracy display
-        accuracyPercent.textContent = `${this.accuracy}%`;
-        accuracyCircle.classList.toggle("high", this.accuracy >= 80);
+        const step = this.currentPose.steps[this.currentStep];
 
-        // Show feedback
         if (this.accuracy >= 80) {
+          if (!this.stepStartTime) this.stepStartTime = Date.now();
           this.holdDuration = Math.round((Date.now() - this.stepStartTime) / 1000);
-          timerDisplay.textContent = `${this.holdDuration}s`;
+          const remaining = Math.max(0, step.hold - this.holdDuration);
+          const progress  = Math.min(100, (this.holdDuration / step.hold) * 100);
 
-          feedback.style.display = "block";
-          feedback.textContent = "✓ Great alignment! Hold steady...";
-          feedback.className = "hud-feedback success";
+          timerEl.textContent = `${remaining}s`;
+          barEl.style.width   = `${progress}%`;
 
-          const step = this.currentPose.steps[this.currentStep];
+          feedbackEl.style.display = "block";
+          feedbackEl.textContent   = "✓ Hold steady — great alignment!";
+          feedbackEl.className     = "hud-feedback-bar success";
+
           if (this.holdDuration >= step.hold) {
             this.playSuccessAnimation();
             this.nextStep();
           }
         } else {
-          feedback.style.display = "block";
-          const suggestions = this.detector.getFeedback(this.lastLandmarks, this.targetLandmarks);
-          feedback.textContent = suggestions[0] || "Adjust your position";
-          feedback.className = "hud-feedback warning";
+          this.stepStartTime = null;
+          this.holdDuration  = 0;
+          timerEl.textContent = `${step.hold}s`;
+          barEl.style.width   = "0%";
+
+          feedbackEl.style.display = "block";
+          const hints = this.detector.getFeedback(this.lastLandmarks, this.targetLandmarks);
+          feedbackEl.textContent = hints[0] || "Align with the ghost outline";
+          feedbackEl.className   = "hud-feedback-bar warning";
         }
       }
 
-      requestAnimationFrame(detectionLoop);
+      requestAnimationFrame(loop);
     };
 
-    detectionLoop();
+    loop();
   },
 
+  // ── Target landmark configs (MoveNet 17-pt) ─────────────────────────
   generateTargetLandmarks(pose) {
-    // Generate idealized pose landmarks based on pose type
-    const baseLandmarks = Array(33).fill(null).map(() => ({ x: 0.5, y: 0.5, z: 0 }));
+    // Neutral standing base
+    const b = {};
+    b[0]  = { x:0.50, y:0.10, score:1 }; // nose
+    b[5]  = { x:0.40, y:0.25, score:1 }; // L shoulder
+    b[6]  = { x:0.60, y:0.25, score:1 }; // R shoulder
+    b[7]  = { x:0.35, y:0.40, score:1 }; // L elbow
+    b[8]  = { x:0.65, y:0.40, score:1 }; // R elbow
+    b[9]  = { x:0.32, y:0.55, score:1 }; // L wrist
+    b[10] = { x:0.68, y:0.55, score:1 }; // R wrist
+    b[11] = { x:0.44, y:0.60, score:1 }; // L hip
+    b[12] = { x:0.56, y:0.60, score:1 }; // R hip
+    b[13] = { x:0.44, y:0.78, score:1 }; // L knee
+    b[14] = { x:0.56, y:0.78, score:1 }; // R knee
+    b[15] = { x:0.44, y:0.95, score:1 }; // L ankle
+    b[16] = { x:0.56, y:0.95, score:1 }; // R ankle
 
-    // Customize based on pose ID
-    const configurations = {
-      mountain: {
-        11: { x: 0.4, y: 0.2, z: 0 }, // left shoulder
-        12: { x: 0.6, y: 0.2, z: 0 }, // right shoulder
-        23: { x: 0.4, y: 0.6, z: 0 }, // left hip
-        24: { x: 0.6, y: 0.6, z: 0 }, // right hip
-        27: { x: 0.4, y: 1.0, z: 0 }, // left ankle
-        28: { x: 0.6, y: 1.0, z: 0 }  // right ankle
-      },
-      tree: {
-        11: { x: 0.4, y: 0.2, z: 0 },
-        12: { x: 0.6, y: 0.2, z: 0 },
-        23: { x: 0.5, y: 0.6, z: 0 },
-        24: { x: 0.5, y: 0.8, z: 0 },
-        25: { x: 0.5, y: 0.8, z: 0 },
-        26: { x: 0.5, y: 0.95, z: 0 }
-      },
-      warrior2: {
-        11: { x: 0.3, y: 0.25, z: 0 },
-        12: { x: 0.7, y: 0.25, z: 0 },
-        23: { x: 0.3, y: 0.65, z: 0 },
-        24: { x: 0.7, y: 0.65, z: 0 },
-        25: { x: 0.3, y: 0.9, z: 0 },
-        26: { x: 0.7, y: 0.9, z: 0 }
-      }
+    const configs = {
+      mountain: { 7:{x:0.40,y:0.15,score:1}, 8:{x:0.60,y:0.15,score:1}, 9:{x:0.40,y:0.05,score:1}, 10:{x:0.60,y:0.05,score:1} },
+      tree:     { 7:{x:0.43,y:0.35,score:1}, 8:{x:0.57,y:0.35,score:1}, 9:{x:0.48,y:0.05,score:1}, 10:{x:0.52,y:0.05,score:1}, 13:{x:0.38,y:0.72,score:1}, 15:{x:0.50,y:0.80,score:1} },
+      warrior1: { 5:{x:0.42,y:0.28,score:1}, 6:{x:0.58,y:0.28,score:1}, 7:{x:0.40,y:0.12,score:1}, 8:{x:0.60,y:0.12,score:1}, 9:{x:0.40,y:0.04,score:1}, 10:{x:0.60,y:0.04,score:1}, 11:{x:0.38,y:0.60,score:1}, 12:{x:0.62,y:0.60,score:1}, 13:{x:0.25,y:0.80,score:1}, 15:{x:0.22,y:0.96,score:1}, 14:{x:0.65,y:0.76,score:1}, 16:{x:0.78,y:0.96,score:1} },
+      warrior2: { 7:{x:0.20,y:0.30,score:1}, 8:{x:0.80,y:0.30,score:1}, 9:{x:0.08,y:0.30,score:1}, 10:{x:0.92,y:0.30,score:1}, 13:{x:0.22,y:0.80,score:1}, 15:{x:0.20,y:0.96,score:1}, 14:{x:0.68,y:0.74,score:1}, 16:{x:0.82,y:0.96,score:1} },
+      triangle: { 7:{x:0.28,y:0.40,score:1}, 8:{x:0.72,y:0.20,score:1}, 9:{x:0.14,y:0.52,score:1}, 10:{x:0.86,y:0.08,score:1}, 11:{x:0.38,y:0.62,score:1}, 12:{x:0.62,y:0.62,score:1}, 13:{x:0.30,y:0.80,score:1}, 15:{x:0.22,y:0.96,score:1} },
+      bridge:   { 9:{x:0.36,y:0.72,score:1}, 10:{x:0.64,y:0.72,score:1}, 11:{x:0.42,y:0.48,score:1}, 12:{x:0.58,y:0.48,score:1}, 13:{x:0.42,y:0.70,score:1}, 14:{x:0.58,y:0.70,score:1}, 15:{x:0.42,y:0.88,score:1}, 16:{x:0.58,y:0.88,score:1} },
+      boat:     { 5:{x:0.40,y:0.32,score:1}, 6:{x:0.60,y:0.32,score:1}, 7:{x:0.28,y:0.44,score:1}, 8:{x:0.72,y:0.44,score:1}, 9:{x:0.18,y:0.54,score:1}, 10:{x:0.82,y:0.54,score:1}, 11:{x:0.44,y:0.56,score:1}, 12:{x:0.56,y:0.56,score:1}, 13:{x:0.36,y:0.40,score:1}, 14:{x:0.64,y:0.40,score:1}, 15:{x:0.28,y:0.28,score:1}, 16:{x:0.72,y:0.28,score:1} }
     };
 
-    const config = configurations[pose.id];
-    if (config) {
-      Object.assign(baseLandmarks, config);
-    }
-
-    return baseLandmarks;
+    const cfg = configs[pose.id];
+    return cfg ? Object.assign(b, cfg) : b;
   },
 
   getJointIndices(criticalJoints) {
-    const jointMap = {
-      nose: 0, neck: 1, shoulders: [11, 12], elbows: [13, 14],
-      wrists: [15, 16], hips: [23, 24], knees: [25, 26],
-      ankles: [27, 28], core: [11, 12, 23, 24]
+    const map = {
+      nose:[0], shoulders:[5,6], elbows:[7,8], wrists:[9,10],
+      hips:[11,12], knees:[13,14], ankles:[15,16],
+      core:[5,6,11,12], spine:[0,5,6,11,12],
+      left_shoulder:[5], right_shoulder:[6],
+      left_knee:[13], right_knee:[14],
+      left_hip:[11], right_hip:[12],
+      left_ankle:[15], right_ankle:[16]
     };
-
-    let indices = [];
+    let out = [];
     if (criticalJoints) {
-      criticalJoints.forEach(joint => {
-        if (jointMap[joint]) {
-          if (Array.isArray(jointMap[joint])) {
-            indices = indices.concat(jointMap[joint]);
-          } else {
-            indices.push(jointMap[joint]);
-          }
-        }
+      criticalJoints.forEach(j => {
+        const v = map[j];
+        if (v) out = out.concat(v);
       });
     }
-
-    return indices.length > 0 ? indices : Array.from({ length: 33 }, (_, i) => i);
+    return out.length ? out : Array.from({length:17},(_,i)=>i);
   },
 
   playSuccessAnimation() {
-    const circle = document.getElementById("accuracy-circle");
-    circle.style.animation = "none";
-    setTimeout(() => {
-      circle.style.animation = "pulse 0.6s ease-out";
-    }, 10);
+    const c = document.getElementById("accuracy-circle");
+    c.style.animation = "none";
+    requestAnimationFrame(() => { c.style.animation = "pulse 0.6s ease-out"; });
   },
 
   nextStep() {
     this.currentStep++;
-    
     if (this.currentStep >= this.currentPose.steps.length) {
       this.completeSession();
     } else {
@@ -352,194 +346,23 @@ const yogaSession = {
   },
 
   endSession() {
-    if (confirm("Are you sure you want to end the session?")) {
-      this.closeSession();
-    }
+    if (confirm("End this yoga session?")) this.closeSession();
   },
 
   async completeSession() {
     this.isSessionActive = false;
-
-    const totalDuration = Math.round((Date.now() - this.startTime) / 1000);
-    const avgAccuracy = this.sessionData.length > 0
-      ? Math.round(this.sessionData.reduce((a, b) => a + b.accuracy, 0) / this.sessionData.length)
-      : this.accuracy;
-
-    alert(`🎉 Session Complete!\n\nPose: ${this.currentPose.name}\nDuration: ${totalDuration}s\nAverage Accuracy: ${avgAccuracy}%`);
-
+    const total = Math.round((Date.now() - this.startTime) / 1000);
+    alert(`🎉 Session Complete!\n\nPose: ${this.currentPose.name}\nTotal time: ${total}s\nFinal accuracy: ${this.accuracy}%`);
     this.closeSession();
   },
 
   closeSession() {
     this.isSessionActive = false;
-    if (this.detector) {
-      this.detector.stop();
-    }
+    if (this.detector) this.detector.stop();
     document.getElementById("session-overlay").classList.remove("active");
-    document.getElementById("main-content").style.display = "block";
-    this.loadPoseCategories();
+    document.getElementById("hud-feedback").style.display = "none";
   }
 };
 
-<<<<<<< HEAD
-// Initialize on page load
-document.addEventListener("DOMContentLoaded", () => {
-  yogaSession.initialize();
-=======
-async function initMoveNet() {
-  document.getElementById("status").textContent = "Loading MoveNet...";
-  detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
-    modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
-  });
-  document.getElementById("status").textContent = "Ready. Select a pose.";
-}
-
-function applyTheme(theme) {
-  const nextTheme = theme === "dark" ? "dark" : "light";
-  document.body.dataset.theme = nextTheme;
-  if (toggleTheme) {
-    toggleTheme.textContent = nextTheme === "dark" ? "Dark mode" : "Light mode";
-    toggleTheme.classList.toggle("is-active", nextTheme === "dark");
-  }
-  window.localStorage.setItem("maitriTheme", nextTheme);
-  if (window.updateNeuralBackground) {
-    window.updateNeuralBackground();
-  }
-}
-
-function initTheme() {
-  const stored = window.localStorage.getItem("maitriTheme");
-  if (stored) {
-    applyTheme(stored);
-    return;
-  }
-  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  applyTheme(prefersDark ? "dark" : "light");
-}
-
-function renderSteps(program) {
-  if (!poseSteps || !program) {
-    return;
-  }
-  poseSteps.innerHTML = "";
-  program.checkpoints.forEach((step) => {
-    const item = document.createElement("li");
-    item.className = "guide-step";
-    
-    const titleSpan = document.createElement("span");
-    titleSpan.className = "step-title";
-    titleSpan.textContent = step.title;
-    
-    const detailSpan = document.createElement("span");
-    detailSpan.className = "step-detail";
-    detailSpan.textContent = step.detail;
-    
-    item.appendChild(titleSpan);
-    item.appendChild(detailSpan);
-    poseSteps.appendChild(item);
-  });
-}
-
-function updateGuideUi() {
-  if (!currentProgram) {
-    return;
-  }
-  const totalSteps = currentProgram.checkpoints.length;
-  const step = currentProgram.checkpoints[stepIndex];
-
-  if (poseStage) {
-    poseStage.textContent = `Step ${stepIndex + 1} of ${totalSteps}`;
-  }
-  if (poseProgressLabel) {
-    poseProgressLabel.textContent = step.title;
-  }
-  if (poseFeedback) {
-    poseFeedback.textContent = step.detail;
-  }
-
-  if (poseSteps) {
-    Array.from(poseSteps.children).forEach((item, index) => {
-      item.classList.toggle("is-active", index === stepIndex);
-      item.classList.toggle("is-complete", index < stepIndex);
-    });
-  }
-
-  updateTimerUi();
-}
-
-function updateTimerUi() {
-  if (!currentProgram) {
-    return;
-  }
-  const step = currentProgram.checkpoints[stepIndex];
-  const remaining = Math.max(holdRemaining, 0);
-  const progress = step.hold ? (step.hold - remaining) / step.hold : 0;
-
-  if (poseTimer) {
-    poseTimer.textContent = `${remaining}`;
-  }
-  if (poseProgressTime) {
-    poseProgressTime.textContent = `${remaining}s`;
-  }
-  if (poseProgressFill) {
-    poseProgressFill.style.width = `${Math.min(100, Math.max(0, progress * 100))}%`;
-  }
-}
-
-function stopHoldCountdown(reset = false) {
-  if (holdInterval) {
-    clearInterval(holdInterval);
-    holdInterval = null;
-  }
-  if (reset && currentProgram) {
-    holdRemaining = currentProgram.checkpoints[stepIndex].hold;
-  }
-  updateTimerUi();
-}
-
-function advanceStep() {
-  stopHoldCountdown(false);
-  stepIndex += 1;
-  if (!currentProgram || stepIndex >= currentProgram.checkpoints.length) {
-    completeSession();
-    return;
-  }
-  holdRemaining = currentProgram.checkpoints[stepIndex].hold;
-  updateGuideUi();
-}
-
-function startHoldCountdown() {
-  if (holdInterval) {
-    return;
-  }
-  holdInterval = setInterval(() => {
-    holdRemaining -= 1;
-    if (holdRemaining <= 0) {
-      holdRemaining = 0;
-      updateTimerUi();
-      advanceStep();
-      return;
-    }
-    updateTimerUi();
-  }, 1000);
-}
-
-document.querySelectorAll(".pose-card").forEach(card => {
-  card.addEventListener("click", () => {
-    if (!detector) return;
-    currentPose = card.getAttribute("data-pose");
-    currentProgram = posePrograms[currentPose] || null;
-    if (!currentProgram) {
-      return;
-    }
-    const label = currentProgram.label || card.querySelector("h3").textContent;
-    if (poseName) poseName.textContent = label;
-    if (guidePoseName) guidePoseName.textContent = label;
-    renderSteps(currentProgram);
-    startYogaSession();
-  });
->>>>>>> 320140a65c7d178e6d7fa48316ef84f4145de262
-});
-
-// Export for global access
+document.addEventListener("DOMContentLoaded", () => yogaSession.initialize());
 window.yogaSession = yogaSession;
